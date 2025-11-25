@@ -111,18 +111,18 @@ async function openMovieByArg(m, conn, arg) {
   const details = await getMovieDetails(target)
 
   let msg = `🎄 *¡PELÍCULA NAVIDEÑA!* 🎅\n\n`
-  msg += `🎁 *${details?.title || 'PELÍCULA'}*\n\n`
+  msg += `> 🎁 *${details?.title || 'PELÍCULA'}*\n\n`
 
   if (details?.description) {
-    msg += `🎀 *Descripción:*\n\`\`\`${details.description}\`\`\`\n\n`
+    msg += `> 🎀 *Descripción:*\n\`\`\`${details.description}\`\`\`\n\n`
   }
 
   if (details?.director) {
-    msg += `🎥 *Director:*\n\`\`\`${details.director}\`\`\`\n\n`
+    msg += `> 🎥 *Director:*\n\`\`\`${details.director}\`\`\`\n\n`
   }
 
   if (details?.genres?.length) {
-    msg += `🏷️ *Géneros:*\n\`\`\`${details.genres.join(', ')}\`\`\`\n\n`
+    msg += `> 🏷️ *Géneros:*\n\`\`\`${details.genres.join(', ')}\`\`\`\n\n`
   }
 
   msg += `🔗 *Link:*\n${target}\n\n`
