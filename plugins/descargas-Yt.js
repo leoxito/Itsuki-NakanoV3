@@ -1,236 +1,267 @@
-import fetch from "node-fetch"
-import yts from "yt-search"
-import crypto from "crypto"
-import axios from "axios"
+import axios from 'axios'
+import * as cheerio from 'cheerio'
 
-const handler = async (m, { conn, text, usedPrefix, command }) => {
-  const ctxErr = global.rcanalx || { contextInfo: { externalAdReply: { title: '❌ Error', body: 'Itsuki Nakano IA', thumbnailUrl: 'https://files.catbox.moe/zh5z6m.jpg', sourceUrl: global.canalOficial || '' }}}
-  const ctxWarn = global.rcanalw || { contextInfo: { externalAdReply: { title: '⚠️ Advertencia', body: 'Itsuki Nakano IA', thumbnailUrl: 'https://files.catbox.moe/zh5z6m.jpg', sourceUrl: global.canalOficial || '' }}}
-  const ctxOk = global.rcanalr || { contextInfo: { externalAdReply: { title: '✅ Acción', body: 'Itsuki Nakano IA', thumbnailUrl: 'https://qu.ax/QGAVS.jpg', sourceUrl: global.canalOficial || '' }}}
+const BASE_URL = 'https://pelisflix1.vip'
+const PROXY_PREFIX = 'https://r.jina.ai/https://pelisflix1.vip'
+
+const DEFAULT_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+}
+
+function buildProxyUrl(path) {
+  if (!path.startsWith('/')) return `${PROXY_PREFIX}/${path}`
+  return `${PROXY_PREFIX}${path}`
+}
+
+async function fetchViaProxy(path) {
+  const url = buildProxyUrl(path)
+  const res = await axios.get(url, { headers: DEFAULT_HEADERS, timeout: 20000 })
+  return res.data
+}
+
+function extractMarkdown(rawContent) {
+  const marker = 'Markdown Content:'
+  const index = rawContent.indexOf(marker)
+  if (index === -1) return rawContent
+  return rawContent.slice(index + marker.length).trim()
+}
+
+function parseSearchResults(rawContent) {
+  const markdown = extractMarkdown(rawContent)
+  const results = []
+  const seen = new Set()
+  const regex = /\*\s+\[!\[[^\]]*\]\((?<poster>https?:\/\/[^)]+)\)\s*(?<rawTitle>[^\]]*?)\]\((?<link>https?:\/\/pelisflix1\.vip\/[^(\s)]+)\)/g
+  let match
+
+  while ((match = regex.exec(markdown)) !== null) {
+    const { poster, rawTitle, link } = match.groups
+    if (seen.has(link)) continue
+    seen.add(link)
+
+    const title = rawTitle.replace(/[-–—]+/g, ' ').replace(/\s{2,}/g, ' ').trim()
+    results.push({ title, link, poster })
+  }
+  return results
+}
+
+function parseMovieDetails(rawContent) {
+  const markdown = extractMarkdown(rawContent)
+  const titleMatch = rawContent.match(/Title:\s*(.+)/)
+  const title = titleMatch ? titleMatch[1].replace(/^Ver\s*/i, '').trim() : ''
+
+  const descriptionMatch = markdown.match(/\*\*Ver [^*]+\*\*:\s*([^\n]+)/)
+  const description = descriptionMatch ? descriptionMatch[1].replace(/\*\*/g, '').trim() : ''
+
+  const directorMatch = markdown.match(/Director:\s*\[([^\]]+)\]/)
+  const director = directorMatch ? directorMatch[1].trim() : ''
+
+  const genres = []
+  const genreRegex = /\[([^\]]+)\]\(https?:\/\/pelisflix1\.vip\/genero\/[^(\s)]+\)/g
+  let g
+  while ((g = genreRegex.exec(markdown)) !== null) {
+    const label = g[1].replace(/[,]/g, '').trim()
+    if (label && !genres.includes(label)) genres.push(label)
+  }
+
+  const $ = cheerio.load('<div>' + markdown + '</div>')
+  const paragraphs = $('div').text().split('\n').map(l => l.trim()).filter(Boolean)
+
+  return { title, description, director, genres, extra: paragraphs.slice(0, 5) }
+}
+
+async function searchMovies(query) {
+  try {
+    const path = `/?s=${encodeURIComponent(query)}`
+    const raw = await fetchViaProxy(path)
+    return parseSearchResults(raw)
+  } catch {
+    return []
+  }
+}
+
+async function getMovieDetails(url) {
+  try {
+    const u = url.startsWith('http') ? new URL(url) : new URL(url, BASE_URL)
+    const path = `${u.pathname}${u.search}`
+    const raw = await fetchViaProxy(path)
+    return parseMovieDetails(raw)
+  } catch {
+    return null
+  }
+}
+
+const pfCache = new Map()
+
+async function openMovieByArg(m, conn, arg) {
+  let target = null
+  let poster = null
+  if (/^https?:\/\//i.test(arg)) {
+    target = arg
+  } else if (/^\d{1,3}$/.test(arg)) {
+    const idx = parseInt(arg) - 1
+    const saved = pfCache.get(m.sender)
+    if (saved && saved.results && saved.results[idx]) {
+      target = saved.results[idx].link
+      poster = saved.results[idx].poster || null
+    }
+  }
+  if (!target) return { ok: false, why: 'invalid' }
+
+  const details = await getMovieDetails(target)
+
+  let msg = `🎄 *¡PELÍCULA NAVIDEÑA!* 🎅\n\n`
+  msg += `🎁 *${details?.title || 'PELÍCULA'}*\n\n`
+
+  if (details?.description) {
+    msg += `🎀 *Descripción:*\n\`\`\`${details.description}\`\`\`\n\n`
+  }
+
+  if (details?.director) {
+    msg += `🎥 *Director:*\n\`\`\`${details.director}\`\`\`\n\n`
+  }
+
+  if (details?.genres?.length) {
+    msg += `🏷️ *Géneros:*\n\`\`\`${details.genres.join(', ')}\`\`\`\n\n`
+  }
+
+  msg += `🔗 *Link:*\n${target}\n\n`
+  msg += `> 🎅 *¡Feliz Navidad con Itsuki Nakano V3!* 🎄`
+
+  await conn.sendMessage(m.chat, {
+    image: { url: poster || 'https://images.unsplash.com/photo-1546387903-6d82d96ccca6?w=500&auto=format&fit=crop&q=60' },
+    caption: msg.trim(),
+    contextInfo: global.rcanalr
+  }, { quoted: m })
+
+  return { ok: true }
+}
+
+let handler = async (m, { text, conn, usedPrefix, command }) => {
+  const isOpen = /^(pfopen|pelisflixopen|peliculaopen)$/i.test(command)
+
+  if (isOpen) {
+    const arg = (text || '').trim()
+    if (!arg) {
+      return conn.reply(m.chat, `🎅 *¡NAVIDAD EN PELISFLIX!* 🎄
+
+🎁 *ABRIR PELÍCULA NAVIDEÑA*
+
+❌ *Uso incorrecto*
+
+\`\`\`Debes proporcionar un número o URL\`\`\`
+
+*Ejemplos navideños:*
+• ${usedPrefix}pfopen 1
+• ${usedPrefix}pfopen 5
+• ${usedPrefix}pfopen https://pelisflix1.vip/pelicula/...
+
+> 🎄 *¡Itsuki Nakano V3 - Tu asistente navideño!* 🎅`, m, global.rcanalw)
+    }
+
+    await m.react('🎁')
+    const res = await openMovieByArg(m, conn, arg)
+
+    if (!res.ok) {
+      return conn.reply(m.chat, `🎅 *¡ERROR NAVIDEÑO!* 🎄
+
+❌ *Formato inválido*
+
+\`\`\`El número o URL proporcionado no es válido\`\`\`
+
+*Sugerencias:*
+• Vuelve a buscar la película
+• Elige un número de la lista
+• Verifica que la URL sea correcta
+
+> 🎄 *¡Itsuki Nakano V3 te desea felices fiestas!* 🎅`, m, global.rcanalx)
+    }
+
+    await m.react('✅')
+    return
+  }
+
+  if (!text) {
+    return conn.reply(m.chat, `🎅 *¡BUSCADOR NAVIDEÑO!* 🎄
+
+🎬 *PELISFLIX SEARCH*
+
+❌ *Uso incorrecto*
+
+\`\`\`Debes proporcionar el nombre de una película\`\`\`
+
+*Ejemplos navideños:*
+• ${usedPrefix + command} dune
+• ${usedPrefix + command} mario
+• ${usedPrefix + command} avatar
+
+> 🎄 *¡Encuentra películas para disfrutar en Navidad!* 🎅`, m, global.rcanalw)
+  }
+
+  await m.react('🎞️')
 
   try {
-    if (!text?.trim())
-      return conn.reply(m.chat, `> ‼️ 𝙋𝙤𝙧 𝙛𝙖𝙫𝙤𝙧 𝙞𝙣𝙜𝙧𝙚𝙨𝙖 𝙚𝙡 𝙣𝙤𝙢𝙗𝙧𝙚 𝙤 𝙚𝙣𝙡𝙖𝙘𝙚 𝙙𝙚𝙡 𝙫𝙞𝙙𝙚𝙤 𝙦𝙪𝙚 𝙙𝙚𝙨𝙚𝙖𝙨 𝙗𝙪𝙨𝙘𝙖𝙧.`, m, ctxWarn)
+    const results = await searchMovies(text)
 
-    await m.react('📥')
+    if (!results.length) {
+      await m.react('❌')
+      return conn.reply(m.chat, `🎅 *¡BÚSQUEDA NAVIDEÑA!* 🎄
 
-    const videoMatch = text.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|shorts\/|v\/)?([a-zA-Z0-9_-]{11})/)
-    const query = videoMatch ? `https://youtu.be/${videoMatch[1]}` : text
+🔍 *RESULTADOS*
 
-    const search = await yts(query)
-    const result = videoMatch
-      ? search.videos.find(v => v.videoId === videoMatch[1]) || search.all[0]
-      : search.all[0]
+❌ *No se encontraron resultados*
 
-    if (!result) throw '> ⚠️ 𝙉𝙤 𝙨𝙚 𝙚𝙣𝙘𝙤𝙣𝙩𝙧𝙖𝙧𝙤𝙣 𝙧𝙚𝙨𝙪𝙡𝙩𝙖𝙙𝙤𝙨 𝙥𝙖𝙧𝙖 𝙩𝙪 𝙗𝙪́𝙨𝙦𝙪𝙚𝙙𝙖.'
+\`\`\`Intenta con otro nombre de película\`\`\`
 
-    const { title, thumbnail, timestamp, views, ago, url, author, seconds } = result
-    if (seconds > 60000) throw '> 🚫 𝙀𝙡 𝙫𝙞𝙙𝙚𝙤 𝙨𝙪𝙥𝙚𝙧𝙖 𝙚𝙡 𝙡𝙞́𝙢𝙞𝙩𝙚 𝙙𝙚 𝙙𝙪𝙧𝙖𝙘𝙞𝙤́𝙣 (10 𝙢𝙞𝙣𝙪𝙩𝙤𝙨).'
+*Sugerencias:*
+• Verifica la ortografía
+• Usa nombres completos
+• Prueba con títulos en inglés
 
-    // ✅ CORREGIDO: Verificar si author existe antes de acceder a author.name
-    const channelName = author?.name || '𝘾𝙖𝙣𝙖𝙡 𝘿𝙚𝙨𝙘𝙤𝙣𝙤𝙘𝙞𝙙𝙤'
-    const vistas = formatViews(views)
-    const info = `
-> 🌸 𝙔𝙊𝙐𝙏𝙐𝘽𝙀 𝙋𝙇𝘼𝙔 𝙈𝙐𝙎𝙄𝘾 ✨️
-
-> 🏷 𝙏𝙞́𝙩𝙪𝙡𝙤: ${title}
-> 📺 𝘾𝙖𝙣𝙖𝙡: ${channelName}
-> 👀 𝙑𝙞𝙨𝙩𝙖𝙨: ${vistas}
-> ⏳️ 𝘿𝙪𝙧𝙖𝙘𝙞𝙤́𝙣: ${timestamp}
-> 📆 𝙋𝙪𝙗𝙡𝙞𝙘𝙖𝙙𝙤: ${ago}
-> 🖇 𝙀𝙣𝙡𝙖𝙘𝙚: ${url}`
-
-    const thumb = (await conn.getFile(thumbnail)).data
-    await conn.sendMessage(m.chat, { image: thumb, caption: info }, { quoted: m, ...ctxOk })
-
-    if (['play3', 'mp3'].includes(command)) {
-      await m.react('🎶')
-
-      const audio = await savetube.download(url, "audio")
-      if (!audio?.status) throw `> ❌ 𝙀𝙧𝙧𝙤𝙧 𝙖𝙡 𝙤𝙗𝙩𝙚𝙣𝙚𝙧 𝙚𝙡 𝙖𝙪𝙙𝙞𝙤: ${audio.error}`
-
-      await conn.sendMessage(
-        m.chat,
-        {
-          audio: { url: audio.result.download },
-          mimetype: 'audio/mpeg',
-          fileName: `${title}.mp3`
-        },
-        { quoted: m, ...ctxOk }
-      )
-
-      await m.react('✅')
+> 🎄 *¡Itsuki Nakano V3 - Tu ayuda en estas fiestas!* 🎅`, m, global.rcanalx)
     }
 
-    else if (['play4', 'mp4'].includes(command)) {
-      await m.react('🎥')
-      const video = await getVid(url)
-      if (!video?.url) throw '> ⚠️ 𝙉𝙤 𝙨𝙚 𝙥𝙪𝙙𝙤 𝙤𝙗𝙩𝙚𝙣𝙚𝙧 𝙚𝙡 𝙫𝙞𝙙𝙚𝙤.'
+    pfCache.set(m.sender, { time: Date.now(), results })
 
-      await conn.sendMessage(
-        m.chat,
-        {
-          video: { url: video.url },
-          fileName: `${title}.mp4`,
-          mimetype: 'video/mp4',
-          caption: `> *🎀${title}*`
-        },
-        { quoted: m, ...ctxOk }
-      )
-      await m.react('✅')
-    }
+    const MAX_TEXT = Math.min(results.length, 50)
+    const listTxt = results.slice(0, MAX_TEXT).map((r, i) => `${i + 1}. ${r.title}\n${r.link}`).join('\n\n')
 
-  } catch (e) {
+    let msg = `🎅 *¡RESULTADOS NAVIDEÑOS!* 🎄\n\n`
+    msg += `🎁 *Total encontrado:*\n\`\`\`${results.length} películas\`\`\`\n\n`
+    msg += `${listTxt}\n\n`
+    msg += `🎀 *Siguiente paso:*\n\`\`\`Usa: ${usedPrefix}pfopen <número>\`\`\`\n\n`
+    msg += `*Ejemplo:* ${usedPrefix}pfopen 1\n\n`
+    msg += `> 🎄 *¡Itsuki Nakano V3 - Feliz Navidad!* 🎅`
+
+    await conn.sendMessage(m.chat, {
+      text: msg,
+      contextInfo: global.rcanalr
+    }, { quoted: m })
+
+    await m.react('✅')
+
+  } catch (error) {
     await m.react('❌')
-    console.error('❌ Error en descarga YouTube:', e)
-    return conn.reply(
-      m.chat,
-      typeof e === 'string'
-        ? e
-        : '> ⚠️ 𝙊𝙘𝙪𝙧𝙧𝙞𝙤́ 𝙪𝙣 𝙚𝙧𝙧𝙤𝙧 𝙞𝙣𝙚𝙨𝙥𝙚𝙧𝙖𝙙𝙤.\n> ‼️ 𝙐𝙨𝙖 ' + usedPrefix + '𝙧𝙚𝙥𝙤𝙧𝙩 𝙥𝙖𝙧𝙖 𝙞𝙣𝙛𝙤𝙧𝙢𝙖𝙧𝙡𝙤.\n\n ' + (e.message || 'Error desconocido'),
-      m,
-      ctxErr
-    )
+    console.error('Error en pelisflix:', error)
+
+    return conn.reply(m.chat, `🎅 *¡ERROR NAVIDEÑO!* 🎄
+
+⚠️ *OCURRIÓ UN ERROR*
+
+\`\`\`${error.message || 'Error desconocido'}\`\`\`
+
+*Intenta de nuevo más tarde*
+
+> 🎄 *¡Itsuki Nakano V3 - Tu asistente de confianza!* 🎅`, m, global.rcanalx)
   }
 }
 
-handler.command = handler.help = ['play3', 'play4']
-handler.tags = ['downloader']
-handler.group = true
+handler.before = async function (m) {
+  return false
+}
+
+handler.help = ['pelisflix']
+handler.tags = ['buscador']
+handler.command = ['pelisflix', 'pf', 'pelicula', 'pfopen', 'pelisflixopen', 'peliculaopen']
 
 export default handler
-
-async function getVid(url) {
-  const apis = [
-    {
-      api: 'Yupra',
-      endpoint: `https://api.yupra.my.id/api/downloader/ytmp4?url=${encodeURIComponent(url)}`,
-      extractor: res => res?.result?.formats?.[0]?.url
-    }
-  ]
-  return await fetchFromApis(apis)
-}
-
-async function fetchFromApis(apis) {
-  for (const { api, endpoint, extractor } of apis) {
-    try {
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 10000)
-      const res = await fetch(endpoint, { signal: controller.signal }).then(r => r.json())
-      clearTimeout(timeout)
-      const link = extractor(res)
-      if (link) return { url: link, api }
-    } catch (err) {
-      console.log(`❌ 𝙀𝙧𝙧𝙤𝙧 𝙚𝙣 𝘼𝙋𝙄 ${api}:`, err.message)
-    }
-    await new Promise(resolve => setTimeout(resolve, 500))
-  }
-  return null
-}
-
-const savetube = {
-  api: {
-    base: "https://media.savetube.me/api",
-    info: "/v2/info",
-    download: "/download",
-    cdn: "/random-cdn"
-  },
-  headers: {
-    accept: "*/*",
-    "content-type": "application/json",
-    origin: "https://yt.savetube.me",
-    referer: "https://yt.savetube.me/",
-    "user-agent": "Postify/1.0.0"
-  },
-  crypto: {
-    hexToBuffer: (hexString) => {
-      const matches = hexString.match(/.{1,2}/g)
-      return Buffer.from(matches.join(""), "hex")
-    },
-    decrypt: async (enc) => {
-      const secretKey = "C5D58EF67A7584E4A29F6C35BBC4EB12"
-      const data = Buffer.from(enc, "base64")
-      const iv = data.slice(0, 16)
-      const content = data.slice(16)
-      const key = savetube.crypto.hexToBuffer(secretKey)
-      const decipher = crypto.createDecipheriv("aes-128-cbc", key, iv)
-      let decrypted = decipher.update(content)
-      decrypted = Buffer.concat([decrypted, decipher.final()])
-      return JSON.parse(decrypted.toString())
-    },
-  },
-  youtube: (url) => {
-    const patterns = [
-      /youtube.com\/watch\?v=([a-zA-Z0-9_-]{11})/,
-      /youtube.com\/embed\/([a-zA-Z0-9_-]{11})/,
-      /youtu.be\/([a-zA-Z0-9_-]{11})/
-    ]
-    for (let pattern of patterns) {
-      if (pattern.test(url)) return url.match(pattern)[1]
-    }
-    return null
-  },
-  request: async (endpoint, data = {}, method = "post") => {
-    try {
-      const { data: response } = await axios({
-        method,
-        url: `${endpoint.startsWith("http") ? "" : savetube.api.base}${endpoint}`,
-        data: method === "post" ? data : undefined,
-        params: method === "get" ? data : undefined,
-        headers: savetube.headers
-      })
-      return { status: true, code: 200, data: response }
-    } catch (error) {
-      return { status: false, code: error.response?.status || 500, error: error.message }
-    }
-  },
-  getCDN: async () => {
-    const response = await savetube.request(savetube.api.cdn, {}, "get")
-    if (!response.status) return response
-    return { status: true, code: 200, data: response.data.cdn }
-  },
-  download: async (link, type = "audio") => {
-    const id = savetube.youtube(link)
-    if (!id) return { status: false, code: 400, error: "𝙉𝙤 𝙨𝙚 𝙥𝙪𝙙𝙤 𝙤𝙗𝙩𝙚𝙣𝙚𝙧 𝙄𝘿 𝙙𝙚𝙡 𝙫𝙞𝙙𝙚𝙤" }
-    try {
-      const cdnx = await savetube.getCDN()
-      if (!cdnx.status) return cdnx
-      const cdn = cdnx.data
-      const videoInfo = await savetube.request(
-        `https://${cdn}${savetube.api.info}`,
-        { url: `https://www.youtube.com/watch?v=${id}` }
-      )
-      if (!videoInfo.status) return videoInfo
-      const decrypted = await savetube.crypto.decrypt(videoInfo.data.data)
-      const downloadData = await savetube.request(
-        `https://${cdn}${savetube.api.download}`,
-        {
-          id,
-          downloadType: "audio",
-          quality: "mp3",
-          key: decrypted.key
-        }
-      )
-      if (!downloadData.data.data?.downloadUrl)
-        return { status: false, code: 500, error: "𝙉𝙤 𝙨𝙚 𝙥𝙪𝙙𝙤 𝙤𝙗𝙩𝙚𝙣𝙚𝙧 𝙡𝙞𝙣𝙠 𝙙𝙚 𝙙𝙚𝙨𝙘𝙖𝙧𝙜𝙖" }
-
-      return {
-        status: true,
-        result: {
-          download: downloadData.data.data.downloadUrl,
-          title: decrypted.title || "𝘿𝙚𝙨𝙘𝙤𝙣𝙤𝙘𝙞𝙙𝙤"
-        }
-      }
-    } catch (error) {
-      return { status: false, code: 500, error: error.message }
-    }
-  }
-}
-
-function formatViews(views) {
-  if (views === undefined) return "𝙉𝙤 𝙙𝙞𝙨𝙥𝙤𝙣𝙞𝙗𝙡𝙚"
-  if (views >= 1_000_000_000) return `${(views / 1_000_000_000).toFixed(1)}𝘽 (${views.toLocaleString()})`
-  if (views >= 1_000_000) return `${(views / 1_000_000).toFixed(1)}𝙈 (${views.toLocaleString()})`
-  if (views >= 1_000) return `${(views / 1_000).toFixed(1)}𝙠 (${views.toLocaleString()})`
-  return views.toString()
-}
