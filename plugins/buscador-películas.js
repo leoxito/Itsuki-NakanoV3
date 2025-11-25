@@ -109,26 +109,27 @@ async function openMovieByArg(m, conn, arg) {
   if (!target) return { ok: false, why: 'invalid' }
 
   const details = await getMovieDetails(target)
-  
-  let msg = `꒰⌢ ʚ˚₊‧ 🎬 ꒱꒱ :: *${details?.title || 'PELÍCULA'}* ıllı\n\n`
+
+  let msg = `🎄 *¡PELÍCULA NAVIDEÑA!* 🎅\n\n`
+  msg += `🎁 *${details?.title || 'PELÍCULA'}*\n\n`
 
   if (details?.description) {
-    msg += `੭੭ ﹙ 📝 ﹚:: *Descripción*\n\`\`\`${details.description}\`\`\`\n\n`
+    msg += `🎀 *Descripción:*\n\`\`\`${details.description}\`\`\`\n\n`
   }
 
   if (details?.director) {
-    msg += `੭੭ ﹙ 🎥 ﹚:: *Director*\n\`\`\`${details.director}\`\`\`\n\n`
+    msg += `🎥 *Director:*\n\`\`\`${details.director}\`\`\`\n\n`
   }
 
   if (details?.genres?.length) {
-    msg += `੭੭ ﹙ 🏷️ ﹚:: *Géneros*\n\`\`\`${details.genres.join(', ')}\`\`\`\n\n`
+    msg += `🏷️ *Géneros:*\n\`\`\`${details.genres.join(', ')}\`\`\`\n\n`
   }
 
-  msg += `੭੭ ﹙ 🔗 ﹚:: *Link*\n${target}\n\n`
-  msg += `‐ ダ *ɪᴛsᴜᴋɪ ɴᴀᴋᴀɴᴏ ᴀɪ* ギ`
+  msg += `🔗 *Link:*\n${target}\n\n`
+  msg += `> 🎅 *¡Feliz Navidad con Itsuki Nakano V3!* 🎄`
 
   await conn.sendMessage(m.chat, {
-    image: { url: poster || 'https://files.catbox.moe/b10cv6.jpg' },
+    image: { url: poster || 'https://images.unsplash.com/photo-1546387903-6d82d96ccca6?w=500&auto=format&fit=crop&q=60' },
     caption: msg.trim(),
     contextInfo: global.rcanalr
   }, { quoted: m })
@@ -142,27 +143,29 @@ let handler = async (m, { text, conn, usedPrefix, command }) => {
   if (isOpen) {
     const arg = (text || '').trim()
     if (!arg) {
-      return conn.reply(m.chat, `꒰⌢ ʚ˚₊‧ 📥 ꒱꒱ :: *ABRIR PELÍCULA* ıllı
+      return conn.reply(m.chat, `🎅 *¡NAVIDAD EN PELISFLIX!* 🎄
 
-੭੭ ﹙ ❌ ﹚:: *Uso incorrecto*
+🎁 *ABRIR PELÍCULA NAVIDEÑA*
+
+❌ *Uso incorrecto*
 
 \`\`\`Debes proporcionar un número o URL\`\`\`
 
-*Ejemplos:*
+*Ejemplos navideños:*
 • ${usedPrefix}pfopen 1
 • ${usedPrefix}pfopen 5
 • ${usedPrefix}pfopen https://pelisflix1.vip/pelicula/...
 
-‐ ダ *ɪᴛsᴜᴋɪ ɴᴀᴋᴀɴᴏ ᴀɪ* ギ`, m, global.rcanalw)
+> 🎄 *¡Itsuki Nakano V3 - Tu asistente navideño!* 🎅`, m, global.rcanalw)
     }
 
-    await m.react('📀')
+    await m.react('🎁')
     const res = await openMovieByArg(m, conn, arg)
-    
-    if (!res.ok) {
-      return conn.reply(m.chat, `꒰⌢ ʚ˚₊‧ ⚠️ ꒱꒱ :: *ERROR* ıllı
 
-੭੭ ﹙ ❌ ﹚:: *Formato inválido*
+    if (!res.ok) {
+      return conn.reply(m.chat, `🎅 *¡ERROR NAVIDEÑO!* 🎄
+
+❌ *Formato inválido*
 
 \`\`\`El número o URL proporcionado no es válido\`\`\`
 
@@ -171,38 +174,42 @@ let handler = async (m, { text, conn, usedPrefix, command }) => {
 • Elige un número de la lista
 • Verifica que la URL sea correcta
 
-‐ ダ *ɪᴛsᴜᴋɪ ɴᴀᴋᴀɴᴏ ᴀɪ* ギ`, m, global.rcanalx)
+> 🎄 *¡Itsuki Nakano V3 te desea felices fiestas!* 🎅`, m, global.rcanalx)
     }
-    
+
     await m.react('✅')
     return
   }
 
   if (!text) {
-    return conn.reply(m.chat, `꒰⌢ ʚ˚₊‧ 🎬 ꒱꒱ :: *PELISFLIX SEARCH* ıllı
+    return conn.reply(m.chat, `🎅 *¡BUSCADOR NAVIDEÑO!* 🎄
 
-੭੭ ﹙ ❌ ﹚:: *Uso incorrecto*
+🎬 *PELISFLIX SEARCH*
+
+❌ *Uso incorrecto*
 
 \`\`\`Debes proporcionar el nombre de una película\`\`\`
 
-*Ejemplo:*
+*Ejemplos navideños:*
 • ${usedPrefix + command} dune
 • ${usedPrefix + command} mario
 • ${usedPrefix + command} avatar
 
-‐ ダ *ɪᴛsᴜᴋɪ ɴᴀᴋᴀɴᴏ ᴀɪ* ギ`, m, global.rcanalw)
+> 🎄 *¡Encuentra películas para disfrutar en Navidad!* 🎅`, m, global.rcanalw)
   }
 
   await m.react('🎞️')
-  
+
   try {
     const results = await searchMovies(text)
-    
+
     if (!results.length) {
       await m.react('❌')
-      return conn.reply(m.chat, `꒰⌢ ʚ˚₊‧ 🔍 ꒱꒱ :: *BÚSQUEDA* ıllı
+      return conn.reply(m.chat, `🎅 *¡BÚSQUEDA NAVIDEÑA!* 🎄
 
-੭੭ ﹙ ❌ ﹚:: *No se encontraron resultados*
+🔍 *RESULTADOS*
+
+❌ *No se encontraron resultados*
 
 \`\`\`Intenta con otro nombre de película\`\`\`
 
@@ -211,20 +218,20 @@ let handler = async (m, { text, conn, usedPrefix, command }) => {
 • Usa nombres completos
 • Prueba con títulos en inglés
 
-‐ ダ *ɪᴛsᴜᴋɪ ɴᴀᴋᴀɴᴏ ᴀɪ* ギ`, m, global.rcanalx)
+> 🎄 *¡Itsuki Nakano V3 - Tu ayuda en estas fiestas!* 🎅`, m, global.rcanalx)
     }
 
     pfCache.set(m.sender, { time: Date.now(), results })
 
     const MAX_TEXT = Math.min(results.length, 50)
     const listTxt = results.slice(0, MAX_TEXT).map((r, i) => `${i + 1}. ${r.title}\n${r.link}`).join('\n\n')
-    
-    let msg = `꒰⌢ ʚ˚₊‧ 🎬 ꒱꒱ :: *RESULTADOS* ıllı\n\n`
-    msg += `੭੭ ﹙ 📊 ﹚:: *Total encontrado*\n\`\`\`${results.length} películas\`\`\`\n\n`
+
+    let msg = `🎅 *¡RESULTADOS NAVIDEÑOS!* 🎄\n\n`
+    msg += `🎁 *Total encontrado:*\n\`\`\`${results.length} películas\`\`\`\n\n`
     msg += `${listTxt}\n\n`
-    msg += `੭੭ ﹙ 👉 ﹚:: *Siguiente paso*\n\`\`\`Usa: ${usedPrefix}pfopen <número>\`\`\`\n\n`
+    msg += `🎀 *Siguiente paso:*\n\`\`\`Usa: ${usedPrefix}pfopen <número>\`\`\`\n\n`
     msg += `*Ejemplo:* ${usedPrefix}pfopen 1\n\n`
-    msg += `‐ ダ *ɪᴛsᴜᴋɪ ɴᴀᴋᴀɴᴏ ᴀɪ* ギ`
+    msg += `> 🎄 *¡Itsuki Nakano V3 - Feliz Navidad!* 🎅`
 
     await conn.sendMessage(m.chat, {
       text: msg,
@@ -236,16 +243,16 @@ let handler = async (m, { text, conn, usedPrefix, command }) => {
   } catch (error) {
     await m.react('❌')
     console.error('Error en pelisflix:', error)
-    
-    return conn.reply(m.chat, `꒰⌢ ʚ˚₊‧ ⚠️ ꒱꒱ :: *ERROR* ıllı
 
-੭੭ ﹙ ❌ ﹚:: *Ocurrió un error*
+    return conn.reply(m.chat, `🎅 *¡ERROR NAVIDEÑO!* 🎄
+
+⚠️ *OCURRIÓ UN ERROR*
 
 \`\`\`${error.message || 'Error desconocido'}\`\`\`
 
 *Intenta de nuevo más tarde*
 
-‐ ダ *ɪᴛsᴜᴋɪ ɴᴀᴋᴀɴᴏ ᴀɪ* ギ`, m, global.rcanalx)
+> 🎄 *¡Itsuki Nakano V3 - Tu asistente de confianza!* 🎅`, m, global.rcanalx)
   }
 }
 
