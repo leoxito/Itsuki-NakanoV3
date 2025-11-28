@@ -50,7 +50,7 @@ let handler = async (m, { conn, usedPrefix: _p }) => {
       let comandos = help.filter(menu => menu.tags.some(tag => catTags.includes(tag)))
 
       if (comandos.length) {
-        menuText += `> `\`꒰⌢ ʚ˚₊‧ ✐ ꒱ ☃️ ${catName} ☃️\`\n`
+        menuText += > `\`꒰⌢ ʚ˚₊‧ ✐ ꒱ ☃️ ${catName} ☃️\`\n`
         let uniqueCommands = [...new Set(comandos.flatMap(menu => menu.help))]
         for (let cmd of uniqueCommands) {
           menuText += `> ੭੭ ﹙✰﹚ ❄︎ \`\`\`${_p}${cmd}\`\`\`\n`
