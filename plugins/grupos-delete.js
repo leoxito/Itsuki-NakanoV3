@@ -1,6 +1,6 @@
 let handler = async (m, { conn, isGroup }) => {
   if (!m.quoted)
-    return conn.reply(m.chat, '❀ Cita el mensaje que deseas eliminar.', m)
+    return conn.reply(m.chat, '> Cita el mensaje que deseas eliminar.', m)
 
   try {
     const botJid = conn.decodeJid(conn.user.id)
