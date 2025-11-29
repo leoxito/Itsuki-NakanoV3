@@ -2,7 +2,7 @@ import fetch from "node-fetch"
 
 let handler = async (m, { conn, usedPrefix, command, args }) => {
   try {
-    const key = ""stellar-80NCvoDG"
+    const key = "stellar-80NCvoDG"
     const url = args[0]
     const emogis = args.slice(1).join(" ")
 
