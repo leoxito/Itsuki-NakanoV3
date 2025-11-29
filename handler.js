@@ -429,20 +429,21 @@ let edadaleatoria = ['10', '28', '20', '40', '18', '21', '15', '11', '9', '17', 
 let user2 = m.pushName || 'Anónimo'
 let verifyaleatorio = ['registrar', 'reg', 'verificar', 'verify', 'register'].getRandom()
 
+// OBJETO MSG CORREGIDO - SIN ERROR DE SINTAXIS
 const msg = {
-    const msg = {
-    rowner: '> ⓘ \`Este comando solo puede usarlo mi creador\`',
-    owner: '> ⓘ \`Este comando está reservado para mi creador\`',
-    mods: '> ⓘ \`Este comando solo lo pueden usar los moderadores\`',
-    premium: '> ⓘ \`Este comando es exclusivo para usuarios premium\`',
-    group: '> ⓘ \`Este comando solo se puede usar en grupos\`',
-    private: '> ⓘ \`Este comando solo funciona en mi chat privado\`',
-    admin: '> ⓘ \`Solo los administradores del grupo pueden usar esto\`',
-    botAdmin: '> ⓘ \`Necesito ser administradora para ejecutar este comando\`',
-    unreg: '> ⓘ \`No estás registrado aún\`\n> ⓘ \`Regístrate primero con:\` *reg nombre.edad*',
-    restrict: '> ⓘ \`Esta característica está deshabilitada\`'
+    rowner: '> ⓘ \\`Este comando solo puede usarlo mi creador\\`',
+    owner: '> ⓘ \\`Este comando está reservado para mi creador\\`',
+    mods: '> ⓘ \\`Este comando solo lo pueden usar los moderadores\\`',
+    premium: '> ⓘ \\`Este comando es exclusivo para usuarios premium\\`',
+    group: '> ⓘ \\`Este comando solo se puede usar en grupos\\`',
+    private: '> ⓘ \\`Este comando solo funciona en mi chat privado\\`',
+    admin: '> ⓘ \\`Solo los administradores del grupo pueden usar esto\\`',
+    botAdmin: '> ⓘ \\`Necesito ser administradora para ejecutar este comando\\`',
+    unreg: '> ⓘ \\`No estás registrado aún\\`\\n> ⓘ \\`Regístrate primero con:\\` *reg nombre.edad*',
+    restrict: '> ⓘ \\`Esta característica está deshabilitada\\`'
 }[type];
-if (msg) return conn.reply(m.chat, msg, m, rcanal).then(_ => m.react('✖️'))
+
+if (msg) return conn.reply(m.chat, msg, m).then(_ => m.react('✖️'))
 }
 
 // USO FINAL DE GLOBAL.__FILENAME PARA WATCHFILE
