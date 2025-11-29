@@ -66,11 +66,9 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
         fileName: `${data5.name}.apk`,
         caption: `> ⓘ APK DESCARGADA
 
-> \`\`\`${data5.name}\`\`\`
-> 📦 *Package:*
-> \`\`\`${data5.package}\`\`\`
-> 💾 *Tamaño:*
-> \`\`\`${data5.size}\`\`\``,
+> 📱 ${data5.name}
+> 📦 ${data5.package}
+> 💾 ${data5.size}`,
         ...(thumbnail ? { jpegThumbnail: thumbnail } : {})
       },
       { quoted: m }
