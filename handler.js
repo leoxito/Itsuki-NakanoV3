@@ -9,21 +9,38 @@ import ws from "ws"
 import { createCanvas, loadImage } from '@napi-rs/canvas'
 import { jidNormalizedUser } from '@whiskeysockets/baileys'
 
-// SISTEMA GLOBAL FILENAME - INICIO
+// =============================================
+// CORRECCIÓN: SISTEMA GLOBAL FILENAME SIMPLIFICADO
+// =============================================
+// Solo define si no existen, pero de forma más simple
 if (typeof global.__filename !== 'function') {
-  global.__filename = (url, relative = false) => {
-    const filename = fileURLToPath(url);
-    return relative ? path.relative(process.cwd(), filename) : filename;
+  global.__filename = function(url, relative = false) {
+    try {
+      const filename = fileURLToPath(url);
+      return relative ? path.relative(process.cwd(), filename) : filename;
+    } catch (e) {
+      console.error('Error en __filename:', e);
+      return '';
+    }
   };
 }
 
 if (typeof global.__dirname !== 'function') {
-  global.__dirname = (url, relative = false) => {
-    const dirname = path.dirname(fileURLToPath(url));
-    return relative ? path.relative(process.cwd(), dirname) : dirname;
+  global.__dirname = function(url, relative = false) {
+    try {
+      const dirname = path.dirname(fileURLToPath(url));
+      return relative ? path.relative(process.cwd(), dirname) : dirname;
+    } catch (e) {
+      console.error('Error en __dirname:', e);
+      return '';
+    }
   };
 }
-// SISTEMA GLOBAL FILENAME - FIN
+
+// =============================================
+// DIRECTORIO ACTUAL PARA USO INTERNO
+// =============================================
+const CURRENT_DIR = path.dirname(fileURLToPath(import.meta.url));
 
 const { proto } = (await import("@whiskeysockets/baileys")).default
 const isNumber = x => typeof x === "number" && !isNaN(x)
@@ -50,8 +67,8 @@ async function loadImageSmart(src) {
   } catch { return null }
 }
 
-// Sistema de estado para welcome
-const WELCOME_STATE_FILE = path.join(__dirname, '../temp/welcome_state.json')
+// Sistema de estado para welcome - CORREGIDO
+const WELCOME_STATE_FILE = path.join(CURRENT_DIR, '../temp/welcome_state.json')
 
 function loadWelcomeState() {
   try {
@@ -182,7 +199,7 @@ export async function sendWelcomeOrBye(conn, { jid, userName = 'Usuario', type =
     return null
   }
 
-  const tmp = path.join(__dirname, '../temp')
+  const tmp = path.join(CURRENT_DIR, '../temp')
   if (!fs.existsSync(tmp)) fs.mkdirSync(tmp, { recursive: true })
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)]
   const normalizeNumberFromJid = (jidOrNum = '') => {
@@ -192,7 +209,7 @@ export async function sendWelcomeOrBye(conn, { jid, userName = 'Usuario', type =
     const onlyDigits = justNoSuffix.replace(/\D+/g, '')
     return onlyDigits
   }
-  
+
   // Arrays de fondos y mensajes
   const BG_IMAGES = [
     'https://iili.io/KIShsKx.md.jpg',
@@ -211,7 +228,7 @@ export async function sendWelcomeOrBye(conn, { jid, userName = 'Usuario', type =
     'https://iili.io/KISwWEG.md.jpg',
     'https://iili.io/KISwX4f.md.jpg'
   ]
-  
+
   const WELCOME_TITLES = ['Bienvenido', 'Bienvenida', '¡Bienvenid@!', 'Saludos', '¡Hola!', 'Llegada', 'Nuevo miembro', 'Bienvenid@ al grupo', 'Que gusto verte', 'Bienvenido/a']
   const WELCOME_SUBS = [
     'Un placer tenerte aquí',
@@ -225,7 +242,7 @@ export async function sendWelcomeOrBye(conn, { jid, userName = 'Usuario', type =
     'Gracias por unirte',
     'La comunidad te da la bienvenida'
   ]
-  
+
   const BYE_TITLES = ['Adiós', 'Despedida', 'Hasta luego', 'Nos vemos', 'Salida', 'Bye', 'Chao', 'Nos vemos pronto', 'Que te vaya bien', 'Sayonara']
   const BYE_SUBS = [
     'Adiós, nadie te quiso',
@@ -239,29 +256,29 @@ export async function sendWelcomeOrBye(conn, { jid, userName = 'Usuario', type =
     'Adiós y cuídate',
     'Chao, fue un placer... quizá'
   ]
-  
+
   const title = type === 'welcome' ? pick(WELCOME_TITLES) : pick(BYE_TITLES)
   const subtitle = type === 'welcome' ? [pick(WELCOME_SUBS)] : [pick(BYE_SUBS)]
   const badgeUrl = ''
   const bgUrl = pick(BG_IMAGES)
-  
+
   let avatarUrl = ''
   try {
     if (participant) avatarUrl = await conn.profilePictureUrl(participant, 'image')
   } catch {}
   if (!avatarUrl) avatarUrl = 'https://files.catbox.moe/xr2m6u.jpg'
-  
+
   const buff = await makeCard({ title, subtitle, avatarUrl, bgUrl, badgeUrl })
   const file = path.join(tmp, `${type}-${Date.now()}.png`)
   fs.writeFileSync(file, buff)
-  
+
   const who = participant || ''
   let realJid = who
   try { if (typeof conn?.decodeJid === 'function') realJid = conn.decodeJid(realJid) } catch {}
   try { realJid = jidNormalizedUser(realJid) } catch {}
   const number = normalizeNumberFromJid(realJid)
   const taguser = number ? `@${number}` : (userName || 'Usuario')
-  
+
   let meta = null
   try { meta = await conn.groupMetadata(jid) } catch {}
   const totalMembers = Array.isArray(meta?.participants) ? meta.participants.length : 0
@@ -331,12 +348,12 @@ export async function sendWelcomeOrBye(conn, { jid, userName = 'Usuario', type =
     quoted: fkontak || undefined, 
     contextInfo: { mentionedJid: mentionId } 
   })
-  
+
   // Limpiar archivo temporal después de enviar
   setTimeout(() => {
     try { fs.unlinkSync(file) } catch {}
   }, 60000)
-  
+
   return file
 }
 
@@ -416,26 +433,26 @@ const normalizeNumber = (num) => {
 export async function handler(chatUpdate) {
   this.msgqueque = this.msgqueque || []
   this.uptime = this.uptime || Date.now()
-  
+
   if (!chatUpdate) {
     return
   }
-  
+
   this.pushMessage(chatUpdate.messages).catch(console.error)
   let m = chatUpdate.messages[chatUpdate.messages.length - 1]
   if (!m) {
     return
   }
-  
+
   if (global.db.data == null) await global.loadDatabase()
-  
+
   try {
     m = smsg(this, m) || m
     if (!m) {
       return
     }
     m.exp = 0
-    
+
     try {
       const user = global.db.data.users[m.sender]
       if (typeof user !== "object") global.db.data.users[m.sender] = {}
@@ -493,7 +510,7 @@ export async function handler(chatUpdate) {
         afkReason: "",
         warn: 0
       }
-      
+
       const chat = global.db.data.chats[m.chat]
       if (typeof chat !== "object") global.db.data.chats[m.chat] = {}
       if (chat) {
@@ -523,7 +540,7 @@ export async function handler(chatUpdate) {
         economy: true,
         gacha: true
       }
-      
+
       const settings = global.db.data.settings[this.user.jid]
       if (typeof settings !== "object") global.db.data.settings[this.user.jid] = {}
       if (settings) {
@@ -536,10 +553,10 @@ export async function handler(chatUpdate) {
     } catch (e) {
       console.error(e)
     }
-    
+
     if (typeof m.text !== "string") m.text = ""
     const user = global.db.data.users[m.sender]
-    
+
     try {
       const actual = user.name || ""
       const nuevo = m.pushName || await this.getName(m.sender)
@@ -547,7 +564,7 @@ export async function handler(chatUpdate) {
         user.name = nuevo
       }
     } catch {}
-    
+
     const chat = global.db.data.chats[m.chat]
     const settings = global.db.data.settings[this.user.jid]  
 
@@ -585,8 +602,11 @@ export async function handler(chatUpdate) {
     m.exp += Math.ceil(Math.random() * 10)
     let usedPrefix
 
-    // USO DE GLOBAL.__DIRNAME MEJORADO
-    const ___dirname = global.__dirname(import.meta.url, false) || path.join(path.dirname(fileURLToPath(import.meta.url)), "./plugins")
+    // =============================================
+    // CORRECCIÓN CRÍTICA: USO DE DIRECTORIOS
+    // =============================================
+    // Reemplaza la línea problemática 54
+    const ___dirname = path.join(CURRENT_DIR, "./plugins")
 
     const groupMetadata = m.isGroup ? { 
       ...(conn.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}), 
@@ -599,14 +619,14 @@ export async function handler(chatUpdate) {
         })) 
       }) 
     } : {}
-    
+
     const participants = ((m.isGroup ? groupMetadata.participants : []) || []).map(participant => ({ 
       id: participant.jid, 
       jid: participant.jid, 
       lid: participant.lid, 
       admin: participant.admin 
     }))
-    
+
     const userGroup = (m.isGroup ? participants.find((u) => conn.decodeJid(u.jid) === m.sender) : {}) || {}
     const botGroup = (m.isGroup ? participants.find((u) => conn.decodeJid(u.jid) == this.user.jid) : {}) || {}
     const isRAdmin = userGroup?.admin == "superadmin" || false
@@ -618,8 +638,8 @@ export async function handler(chatUpdate) {
       if (!plugin) continue
       if (plugin.disabled) continue
 
-      // USO DE GLOBAL.__FILENAME MEJORADO
-      const __filename = global.__filename(import.meta.url, false) || join(___dirname, name)
+      // CORRECCIÓN: Usar CURRENT_DIR en lugar de ___dirname complejo
+      const __filename = join(___dirname, name)
 
       if (typeof plugin.all === "function") {
         try {
@@ -635,7 +655,7 @@ export async function handler(chatUpdate) {
           console.error(err)
         }
       }
-      
+
       if (!opts["restrict"])
         if (plugin.tags && plugin.tags.includes("admin")) {
           continue
@@ -671,11 +691,11 @@ export async function handler(chatUpdate) {
           continue
         }
       }
-      
+
       if (typeof plugin !== "function") {
         continue
       }
-      
+
       if (prefixMatch && (usedPrefix = prefixMatch.prefix)) {
         const noPrefix = m.text.replace(usedPrefix, "")
         let [command, ...args] = noPrefix.trim().split(" ").filter(v => v)
@@ -691,12 +711,12 @@ export async function handler(chatUpdate) {
               cmd.test(command) : cmd === command) :
             typeof plugin.command === "string" ?
               plugin.command === command : false
-        
+
         global.comando = command
-        
+
         if (!isOwners && settings.self) return
         if ((m.id.startsWith("NJX-") || (m.id.startsWith("BAE5") && m.id.length === 16) || (m.id.startsWith("B24E") && m.id.length === 20))) return
-        
+
         if (global.db.data.chats[m.chat].primaryBot && global.db.data.chats[m.chat].primaryBot !== this.user.jid) {
           const primaryBotConn = global.conns.find(conn => conn.user.jid === global.db.data.chats[m.chat].primaryBot && conn.ws.socket && conn.ws.socket.readyState !== ws.CLOSED)
           const participants = m.isGroup ? (await this.groupMetadata(m.chat).catch(() => ({ participants: [] }))).participants : []
@@ -708,18 +728,18 @@ export async function handler(chatUpdate) {
           }
         } else {
         }
-        
+
         if (!isAccept) continue
         m.plugin = name
-        
+
         if (isAccept) { 
           global.db.data.users[m.sender].commands = (global.db.data.users[m.sender].commands || 0) + 1 
         }
-        
+
         if (chat) {
           const botId = this.user.jid
           const primaryBotId = chat.primaryBot
-          
+
           if (name !== "group-banchat.js" && chat?.isBanned && !isROwner) {
             if (!primaryBotId || primaryBotId === botId) {
               const aviso = `El bot *${botname}* está desactivado en este grupo\n\n> ✦ Un *administrador* puede activarlo con el comando:\n> » *${usedPrefix}bot on*`.trim()
@@ -727,7 +747,7 @@ export async function handler(chatUpdate) {
               return
             }
           }
-          
+
           if (m.text && user.banned && !isROwner) {
             const mensaje = `Estas baneado/a, no puedes usar comandos en este bot!\n\n> ● *Razón ›* ${user.bannedReason}\n\n> ● Si este Bot es cuenta oficial y tienes evidencia que respalde que este mensaje es un error, puedes exponer tu caso con un moderador.`.trim()
             if (!primaryBotId || primaryBotId === botId) {
@@ -736,29 +756,29 @@ export async function handler(chatUpdate) {
             }
           }
         }
-        
+
         if (!isOwners && !m.chat.endsWith('g.us') && !/code|p|ping|qr|estado|status|infobot|botinfo|report|reportar|invite|join|logout|suggest|help|menu/gim.test(m.text)) return
-        
+
         const adminMode = chat.modoadmin || false
         const wa = plugin.botAdmin || plugin.admin || plugin.group || plugin || noPrefix || pluginPrefix || m.text.slice(0, 1) === pluginPrefix || plugin.command
-        
+
         if (adminMode && !isOwner && m.isGroup && !isAdmin && wa) return
-        
+
         if (plugin.rowner && plugin.owner && !(isROwner || isOwner)) {
           fail("owner", m, this)
           continue
         }
-        
+
         if (plugin.rowner && !isROwner) {
           fail("rowner", m, this)
           continue
         }
-        
+
         if (plugin.owner && !isOwner) {
           fail("owner", m, this)
           continue
         }
-        
+
         if (plugin.premium && !isPrems) {
           fail("premium", m, this)
           continue
@@ -781,15 +801,15 @@ export async function handler(chatUpdate) {
           fail("admin", m, this)
           continue
         }
-        
+
         if (plugin.private && m.isGroup) {
           fail("private", m, this)
           continue
         }
-        
+
         m.isCommand = true
         m.exp += plugin.exp ? parseInt(plugin.exp) : 10
-        
+
         let extra = {
           match: prefixMatch ? [prefixMatch.match, prefixMatch.regex] : [],
           usedPrefix,
@@ -816,7 +836,7 @@ export async function handler(chatUpdate) {
           chat,
           settings
         }
-        
+
         try {
           await plugin.call(this, m, extra)
         } catch (err) {
@@ -841,14 +861,14 @@ export async function handler(chatUpdate) {
       if (quequeIndex !== -1)
         this.msgqueque.splice(quequeIndex, 1)
     }
-    
+
     let user, stats = global.db.data.stats
     if (m) {
       if (m.sender && (user = global.db.data.users[m.sender])) {
         user.exp += m.exp
       }
     }
-    
+
     try {
       if (!opts["noprint"]) await (await import("./lib/print.js")).default(m, this)
     } catch (err) {
@@ -884,8 +904,11 @@ global.dfail = (type, m, conn) => {
   if (msg) return conn.reply(m.chat, msg, m).then(_ => m.react('✖️'))
 }
 
-// USO FINAL DE GLOBAL.__FILENAME PARA WATCHFILE
+// USO FINAL DE GLOBAL.__FILENAME PARA WATCHFILE - CORREGIDO
 let file = global.__filename(import.meta.url, true)
+if (typeof file === 'function') {
+  file = CURRENT_DIR;
+}
 watchFile(file, async () => {
   unwatchFile(file)
   console.log(chalk.magenta("Se actualizo 'handler.js'"))
@@ -895,7 +918,6 @@ watchFile(file, async () => {
 // =============================================
 // EXPORTACIONES
 // =============================================
-
 
 export default { 
   handler, 
