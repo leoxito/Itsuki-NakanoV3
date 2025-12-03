@@ -18,3 +18,36 @@
 [![Node.js](https://img.shields.io/badge/Node.js-21+-32CD32.svg?style=for-the-badge&logo=node.js)]()
 
 </div>
+
+
+
+
+ <img src="https://github.com/BrayanOFC-Li/Lines-Neon-MB/raw/main/assets_MB/line-neon.gif" width="400"/>
+</p>
+
+### **`𝗧𝗼𝗰𝗮 𝗟𝗮 𝗜𝗺𝗮𝗴𝗲𝗻 𝗣𝗮𝗿𝗮 𝗗𝗲𝘀𝗰𝗮𝗿𝗴𝗮𝗿 𝗧𝗲𝗿𝗺𝘂𝘅 𝗔𝗰𝘁𝘂𝗮𝗹𝗶𝘇𝗮𝗱𝗼 🌱`**
+<a
+href="https://www.mediafire.com/file/wkinzgpb0tdx5qh/com.termux_1022.apk/file"><img src="https://qu.ax/uYEOh.jpg" height="125px"></a> 
+
+### **`🌸 Instalación por termux`**
+
+> *Comandos para instalar de forma manual*
+```bash
+termux-setup-storage
+```
+```bash
+apt update && apt upgrade && pkg install -y git nodejs ffmpeg imagemagick yarn
+```
+```bash
+git clone https://github.com/leoxito/Itsuki-NakanoV3 && cd Itsuki-NakanoV2
+```
+```bash
+npm install
+```
+```bash
+npm start
+```
+
+### **`ʟᴇᴏ ᴘʀᴏᴘɪᴇᴛᴀʀɪᴏ ᴅᴇʟ ᴘʀᴏʏᴇᴄᴛᴏ`**
+<a
+href="https://github.com/leoxito"><img src="https://github.com/leoxito.png" width="130" height="130" alt="leoxito"/></a>
