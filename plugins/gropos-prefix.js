@@ -2,6 +2,7 @@ import fetch from 'node-fetch'
 
 let handler = async (m, { conn, text, usedPrefix, command, isAdmin, isOwner, groupMetadata }) => {
   if (!m.isGroup) {
+    await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
     return conn.reply(m.chat, 
 `> ⓘ COMANDO SOLO PARA GRUPOS
 
@@ -11,13 +12,14 @@ let handler = async (m, { conn, text, usedPrefix, command, isAdmin, isOwner, gro
   }
 
   const chat = global.db.data.chats[m.chat]
-  
+
   // Verificar si es admin
   const participants = await conn.groupMetadata(m.chat).catch(() => ({ participants: [] }))
   const user = participants.participants.find(p => p.id === m.sender)
   const isUserAdmin = user && (user.admin === 'admin' || user.admin === 'superadmin')
-  
+
   if (!isUserAdmin && !isOwner) {
+    await conn.sendMessage(m.chat, { react: { text: '🚫', key: m.key } })
     return conn.reply(m.chat,
 `> ⓘ PERMISO DENEGADO
 
@@ -31,12 +33,14 @@ let handler = async (m, { conn, text, usedPrefix, command, isAdmin, isOwner, gro
 
   if (command === 'setprefix') {
     if (!subcmd) {
-      // Mostrar prefijo actual
+      // Mostrar prefijo actual - emoji de información
+      await conn.sendMessage(m.chat, { react: { text: 'ℹ️', key: m.key } })
+      
       const currentPrefix = chat.prefix || 'Usando prefijos globales'
       const customPrefixes = chat.prefixes || []
-      
+
       let mensaje = `> 🎯 *PREFIJO ACTUAL*\n\n`
-      
+
       if (chat.prefix) {
         mensaje += `🔰 *Prefijo principal:* ${chat.prefix}\n`
         mensaje += `📅 *Configurado:* Prefijo personalizado del grupo\n\n`
@@ -44,7 +48,7 @@ let handler = async (m, { conn, text, usedPrefix, command, isAdmin, isOwner, gro
         mensaje += `🔰 *Prefijo principal:* Usando prefijos globales\n`
         mensaje += `📅 *Configurado:* Sistema por defecto\n\n`
       }
-      
+
       if (customPrefixes.length > 0) {
         mensaje += `📋 *Prefijos adicionales:*\n`
         customPrefixes.forEach((p, i) => {
@@ -52,21 +56,22 @@ let handler = async (m, { conn, text, usedPrefix, command, isAdmin, isOwner, gro
         })
         mensaje += '\n'
       }
-      
+
       mensaje += `📝 *Uso:* ${usedPrefix}setprefix [nuevo_prefijo]\n`
       mensaje += `💡 *Ejemplos:*\n`
       mensaje += `• ${usedPrefix}setprefix 🔥\n`
       mensaje += `• ${usedPrefix}setprefix ✨\n`
       mensaje += `• ${usedPrefix}setprefix !\n\n`
       mensaje += `🔄 *Para quitar:* ${usedPrefix}delprefix`
-      
+
       return conn.reply(m.chat, mensaje, m)
     }
-    
+
     const newPrefix = args[0]
-    
+
     // Validaciones
     if (newPrefix.length > 3) {
+      await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
       return conn.reply(m.chat,
 `> ⓘ PREFIJO INVÁLIDO
 
@@ -74,8 +79,9 @@ let handler = async (m, { conn, text, usedPrefix, command, isAdmin, isOwner, gro
 
 > 💡 Ejemplo: 🔥, ✨, !`, m)
     }
-    
+
     if (newPrefix.includes(' ')) {
+      await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
       return conn.reply(m.chat,
 `> ⓘ PREFIJO INVÁLIDO
 
@@ -83,18 +89,24 @@ let handler = async (m, { conn, text, usedPrefix, command, isAdmin, isOwner, gro
 
 > 💡 Ejemplo: 🔥, ✨, !`, m)
     }
-    
+
+    // Emoji de espera mientras se configura
+    await conn.sendMessage(m.chat, { react: { text: '🕑', key: m.key } })
+
     // Guardar el prefijo
     chat.prefix = newPrefix
-    
+
     // Si no existe el array de prefijos, crearlo
     if (!chat.prefixes) chat.prefixes = []
-    
+
     // Agregar a la lista de prefijos personalizados si no existe
     if (!chat.prefixes.includes(newPrefix)) {
       chat.prefixes.push(newPrefix)
     }
-    
+
+    // Emoji de éxito después de configurar
+    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
+
     return conn.reply(m.chat,
 `> ✅ *PREFIJO CONFIGURADO*
 
@@ -112,13 +124,16 @@ let handler = async (m, { conn, text, usedPrefix, command, isAdmin, isOwner, gro
 > • Prefijos adicionales: ${chat.prefixes.join(', ')}
 
 > 🗑️ *Para quitar:* ${newPrefix}delprefix`, m)
-    
+
   } else if (command === 'delprefix') {
+    // Emoji de espera mientras se procesa
+    await conn.sendMessage(m.chat, { react: { text: '🕑', key: m.key } })
+    
     // Quitar prefijo personalizado
     if (chat.prefix) {
       const oldPrefix = chat.prefix
       chat.prefix = null
-      
+
       // Remover de la lista de prefijos personalizados
       if (chat.prefixes) {
         const index = chat.prefixes.indexOf(oldPrefix)
@@ -126,7 +141,10 @@ let handler = async (m, { conn, text, usedPrefix, command, isAdmin, isOwner, gro
           chat.prefixes.splice(index, 1)
         }
       }
-      
+
+      // Emoji de éxito
+      await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
+
       return conn.reply(m.chat,
 `> 🔄 *PREFIJO RESTABLECIDO*
 
@@ -145,6 +163,7 @@ let handler = async (m, { conn, text, usedPrefix, command, isAdmin, isOwner, gro
 > ⚙️ *Para configurar nuevo prefijo:*
 > .setprefix [nuevo_prefijo]`, m)
     } else {
+      await conn.sendMessage(m.chat, { react: { text: 'ℹ️', key: m.key } })
       return conn.reply(m.chat,
 `> ℹ️ *INFORMACIÓN*
 
