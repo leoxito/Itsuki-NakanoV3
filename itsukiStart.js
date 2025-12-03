@@ -8,10 +8,6 @@ import { createInterface } from 'readline';
 import yargs from 'yargs';
 import express from 'express';
 import chalk from 'chalk';
-import path from 'path';
-import os from 'os';
-import { promises as fsPromises } from 'fs';
-import figlet from 'figlet';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(__dirname);
@@ -21,35 +17,32 @@ const rl = createInterface(process.stdin, process.stdout);
 const app = express();
 const port = process.env.PORT || 8080;
 
-figlet('', {
-  font: 'Slant', 
-  horizontalLayout: 'default',
-  verticalLayout: 'default'
-}, (err, data) => {
-  if (err) {
-    console.log('Error con figlet:', err);
-    return;
-  }
-  console.log(chalk.green(data));
-  console.log(chalk.yellow('⚙️ 𝐈 𝐍 𝐈 𝐂 𝐈 𝐀 𝐍 𝐃 𝐎 - 𝐒 𝐘 𝐒 𝐓 𝐄 𝐌 𝐀 🟢...'));
-});
+// COLOR ROSADO PERSONALIZADO
+const rosadoMedio = '#FF69B4';     // HotPink
+const rosadoIntenso = '#FF1493';   // DeepPink
+const rosadoVioleta = '#C71585';   // MediumVioletRed
+const rosadoSuave = '#FFC0CB';     // Pink
 
-figlet('', {
-  font: 'Standard',
-  horizontalLayout: 'default',
-  verticalLayout: 'default'
-}, (err, data) => {
-  if (err) {
-    console.log('Error con figlet:', err);
-    return;
-  }
-  console.log(chalk.magenta(data));
-});
-
+// Título con gradiente rosado
 say('ItsukiNakanoV3', {
   font: 'chrome',
   align: 'center',
-  gradient: ['red', 'magenta']
+  gradient: ['#FF69B4', '#FF1493', '#C71585'],
+  independentGradient: true,
+  transitionGradient: true
+});
+
+// Mensaje adicional rosado
+say('BOT MULTI-DEVICE', {
+  font: 'block',
+  align: 'center',
+  colors: ['#FF69B4'],
+  background: 'transparent',
+  letterSpacing: 2,
+  lineHeight: 1,
+  space: true,
+  maxLength: '0',
+  gradient: ['#FF69B4', '#FF1493']
 });
 
 var isRunning = false;
@@ -61,10 +54,13 @@ async function start(files) {
   for (const file of files) {
     const currentFilePath = new URL(import.meta.url).pathname;
     let args = [join(__dirname, file), ...process.argv.slice(2)];
+    
     say([process.argv[0], ...args].join(' '), {
       font: 'console',
       align: 'center',
-      gradient: ['blue', 'blue']
+      gradient: ['#FF69B4', '#FF1493'],
+      independentGradient: false,
+      transitionGradient: true
     });
 
     setupMaster({
@@ -74,7 +70,6 @@ async function start(files) {
 
     let p = fork();
     p.on('message', data => {
-      console.log('[RECEIVED]', data);
       switch (data) {
         case 'reset':
           p.process.kill();
@@ -89,7 +84,6 @@ async function start(files) {
 
     p.on('exit', (_, code) => {
       isRunning = false;
-      console.error('Ocurrió un error inesperado:', code);
       start(files);
 
       if (code === 0) return;
