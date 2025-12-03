@@ -38,12 +38,7 @@
 ### 📱 **Información y Utilidades**  
 - `getnum <@usuario>`: Obtiene número de WhatsApp con permisos.  
 - `hd`: Muestra rendimiento del bot en tiempo real.  
-- `sysinfo`: Estadísticas detalladas del sistema.  
-
-### 👥 **Gestión de Grupos Mejorada**  
-- `kick <@usuario>`: Expulsión con registros mejorados.  
-- `add <número>`: Añade usuarios por número.  
-- `groupconfig`: Panel de configuración visual.  
+- `sysinfo`: Estadísticas detalladas del sistema.    
 
 ## 🛡️ **Sistemas de Seguridad y Control**  
 ### 👑 **OnlyAdmin Mode**  
