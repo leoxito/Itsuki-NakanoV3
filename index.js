@@ -79,12 +79,12 @@ const makeWASocket = (options) => {
     emitOwnEvents: true,
     defaultQueryTimeoutMs: 60000,
   })
-  
+
   // Añadir decodeJid al socket
   if (!socket.decodeJid) {
     socket.decodeJid = global.decodeJid
   }
-  
+
   return socket
 }
 
@@ -103,7 +103,7 @@ watchFile(CONFIG_PATH, async () => {
     const ownersStr = Array.isArray(global.owner) && global.owner.length
       ? global.owner.map(o => Array.isArray(o) ? (o[0] || '') : (o || '')).filter(Boolean).join(', ')
       : '-'
-    
+
     console.log(chalk.hex('#FF69B4')('┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓'))
     console.log(chalk.hex('#FF1493')(`┃   🔄 CONFIGURACIÓN ACTUALIZADA              ┃`))
     console.log(chalk.hex('#FF69B4')('┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫'))
@@ -139,7 +139,7 @@ async function loadPlugins() {
       await importAndIndexPlugin(entryPath)
     }
   }
-  
+
   const total = Object.keys(global.plugins).length
   console.log(chalk.hex('#FF69B4')('┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓'))
   console.log(chalk.hex('#1E90FF')(`┃   📦 PLUGINS CARGADOS                       ┃`))
@@ -190,7 +190,7 @@ let handler
 try { 
   const handlerModule = await import('./handler.js')
   handler = handlerModule.handler || handlerModule.default?.handler || handlerModule.default
-  
+
   // Asegurar que handler tenga decodeJid
   if (typeof handler === 'function') {
     const originalHandler = handler
@@ -205,14 +205,14 @@ try {
 
 try {
   const botDisplayName = (config && (config.botName || config.name || global.namebot)) || 'Bot'
-  
+
   const packageJsonPath = path.join(__dirname, 'package.json')
   let packageJsonObj = {}
   try { const rawPkg = await fs.promises.readFile(packageJsonPath, 'utf8'); packageJsonObj = JSON.parse(rawPkg) } catch {}
   const ramInGB = os.totalmem() / (1024 * 1024 * 1024)
   const freeRamInGB = os.freemem() / (1024 * 1024 * 1024)
   const currentTime = new Date().toLocaleString()
-  
+
   console.log(chalk.hex('#FF69B4')('┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓'))
   console.log(chalk.hex('#1E90FF')(`┃   🖥  INFORMACIÓN DEL SISTEMA                ┃`))
   console.log(chalk.hex('#FF69B4')('┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫'))
@@ -235,7 +235,7 @@ try {
   console.log(chalk.hex('#FF69B4')('┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫'))
   console.log(chalk.hex('#1E90FF')(`┃ 🕒 ${chalk.white(`${currentTime}`)}`))
   console.log(chalk.hex('#FF69B4')('┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛'))
-  
+
 } catch (e) {
   console.log('[Banner] Error al mostrar banners:', e.message)
 }
@@ -277,7 +277,7 @@ async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState(authDir)
   const method = await chooseMethod(authDir)
   const { version } = await fetchLatestBaileysVersion()
-  
+
   // USAR makeWASocket CORREGIDA
   const sock = makeWASocket({
     version,
@@ -289,7 +289,7 @@ async function startBot() {
 
   // AÑADIR decodeJid AL SOCKET
   sock.decodeJid = global.decodeJid
-  
+
   sock.__sessionOpenAt = sock.__sessionOpenAt || 0
 
   // LISTENER DE MENSAJES PRINCIPAL
