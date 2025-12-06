@@ -46,9 +46,9 @@ export async function before(m, { conn, participants, groupMetadata }) {
         memberNumberText = `Era el ${formatMemberNumber(memberCount + 1)} miembro`;
     }
 
-    // --- OBTENCIÓN DE INFORMACIÓN ADICIONAL (SIN PAÍS) ---
+    // --- INFORMACIÓN CLAVE ---
     const userNumber = userJid.split('@')[0];
-    const groupAdmins = participants.filter(p => p.admin).map(p => `@${p.id.split('@')[0]}`).join(', ');
+    const groupId = m.chat;
 
     const actionMessages = {
         [WAMessageStubType.GROUP_PARTICIPANT_ADD]: actionUserName ? `\n┊✨ *Agregado por:* @${actionUserJid.split('@')[0]}` : '',
@@ -57,55 +57,48 @@ export async function before(m, { conn, participants, groupMetadata }) {
     };
 
     /**
-     * Función para formatear el texto del mensaje con TODAS las variables disponibles
+     * Función para formatear el texto con las variables solicitadas
      * @param {string} template - El texto base
-     * @param {number} count - El número de miembros
      * @returns {string} El texto formateado
      */
-    const formatText = (template, count) => {
+    const formatText = (template) => {
         return template
             // Variables del Usuario
-            .replace('@user', `@${userJid.split('@')[0]}`) // Esta variable ya menciona al usuario
-            .replace('@name', name)
-            .replace('@tag', `@${userJid.split('@')[0]}`) // Alias de @user para mayor claridad
-            // .replace('@country', userCountryName) // ELIMINADO
-            .replace('@number', userNumber)
+            .replace('@user', `@${userJid.split('@')[0]}`) // Mención al usuario
+            .replace('@name', name) // Nombre del usuario
+            .replace('@userid', userJid) // ID del usuario
+            .replace('@number', userNumber) // Número de teléfono
             // Variables del Grupo
-            .replace('@group', groupMetadata.subject)
-            .replace('@groupdesc', groupMetadata.desc?.toString() || 'Sin descripción')
-            .replace('@groupid', m.chat)
-            .replace('@admins', groupAdmins)
+            .replace('@group', groupMetadata.subject) // Nombre del grupo
+            .replace('@groupid', groupId) // ID del grupo
             // Variables de Conteo
-            .replace('@users', `${count}`)
-            .replace('@membernum', memberNumberText)
+            .replace('@users', `${memberCount}`) // Total de miembros
+            .replace('@membernum', memberNumberText) // "Eres el Xº miembro"
             // Variables de Acción y Tiempo
             .replace('@type', actionMessages[m.messageStubType])
-            .replace('@date', new Date().toLocaleString('es-ES', { timeZone: 'America/Mexico_City' }))
-            .replace('@time', new Date().toLocaleTimeString('es-ES', { timeZone: 'America/Mexico_City' }));
+            .replace('@date', new Date().toLocaleString('es-ES', { timeZone: 'America/Mexico_City' }));
     };
 
-    // --- PLANTILLAS DE BIENVENIDA (ACTUALIZADAS) ---
+    // --- PLANTILLAS DE BIENVENIDA SIMPLIFICADAS ---
     const welcomeTemplates = {
-        simple: `✨ ¡Bienvenido/a a @group!\n┊👤 @name (@user)\n┊👥 Ahora somos @users miembros.`,
-        detailed: `╔═══💫 *BIENVENIDO/A* 💫═══╗\n┊👤 *Usuario:* @name\n┊🏷️ *Tag:* @user\n┊📞 *Número:* @membernum\n┊🏠 *Grupo:* @group\n┊📅 *Fecha:* @date\n@type\n╚═══════════════════════╝`,
-        complete: `╔══════════════════════════╗\n║     ✨ ¡NUEVO MIEMBRO! ✨     ║\n╠══════════════════════════╣\n║ 💫 *Información del Usuario*\n║ ─────────────────────\n║ 👤 *Nombre:* @name\n║ 🏷️ *Tag:* @user\n║ 📞 *Número:* @number\n║\n║ 🏠 *Información del Grupo*\n║ ─────────────────────\n║ 📚 *Nombre:* @group\n║ 🆔 *ID:* @groupid\n║ 👥 *Miembros:* @users (@membernum)\n║ 👮 *Admins:* @admins\n║\n║ 📜 *Descripción del Grupo*\n║ ─────────────────────\n║ @groupdesc\n║\n║ 🗓️ *Fecha y Hora*\n║ ─────────────────────\n║ 📅 @date\n║ @type\n╚══════════════════════════╝`,
+        simple: `✨ ¡Bienvenido/a a @group!\n┊👤 @name (@user)\n┊🔢 @membernum\n┊👥 Ahora somos @users.`,
+        detailed: `╔═══💫 *BIENVENIDO/A* 💫═══╗\n┊👤 *Usuario:* @name (@user)\n┊🆔 *ID:* @userid\n┊🔢 *Número:* @membernum\n┊🏠 *Grupo:* @group\n┊🆔 *ID del Grupo:* @groupid\n┊📅 *Fecha:* @date\n@type\n╚═══════════════════════╝`,
     };
 
-    // --- PLANTILLAS DE DESPEDIDA (ACTUALIZADAS) ---
+    // --- PLANTILLAS DE DESPEDIDA SIMPLIFICADAS ---
     const byeTemplates = {
-        simple: `👋 @name se ha ido del grupo.\n┊Era el @membernum. Ahora somos @users.`,
-        detailed: `╔═══👋 *DESPEGADA* 👋═══╗\n┊👤 *Usuario:* @name\n┊🏷️ *Tag:* @user\n┊📞 *Número:* @membernum\n┊🏠 *Grupo:* @group\n┊📅 *Fecha:* @date\n@type\n╚═══════════════════════╝`,
-        complete: `╔══════════════════════════╗\n║      👋 *MIEMBRO ELIMINADO* 👋      ║\n╠══════════════════════════╣\n║ 💫 *Información del Usuario*\n║ ─────────────────────\n║ 👤 *Nombre:* @name\n║ 🏷️ *Tag:* @user\n║ 📞 *Número:* @number\n║\n║ 🏠 *Información del Grupo*\n║ ─────────────────────\n║ 📚 *Nombre:* @group\n║ 🆔 *ID:* @groupid\n║ 👥 *Miembros:* @users (@membernum)\n║\n║ 🗓️ *Fecha y Hora*\n║ ─────────────────────\n║ 📅 @date\n║ @type\n╚══════════════════════════╝`,
+        simple: `👋 @name (@user) se ha ido.\n┊🔢 @membernum\n┊👥 Ahora somos @users.`,
+        detailed: `╔═══👋 *DESPEGADA* 👋═══╗\n┊👤 *Usuario:* @name (@user)\n┊🆔 *ID:* @userid\n┊🔢 *Número:* @membernum\n┊🏠 *Grupo:* @group\n┊🆔 *ID del Grupo:* @groupid\n┊📅 *Fecha:* @date\n@type\n╚═══════════════════════╝`,
     };
 
-    // Seleccionar la plantilla. Puedes cambiar 'complete' por 'simple' o 'detailed'
-    const selectedWelcomeTemplate = chat.sWelcome || welcomeTemplates.complete;
-    const selectedByeTemplate = chat.sBye || byeTemplates.complete;
+    // Seleccionar la plantilla. Puedes cambiar 'detailed' por 'simple'
+    const selectedWelcomeTemplate = chat.sWelcome || welcomeTemplates.detailed;
+    const selectedByeTemplate = chat.sBye || byeTemplates.detailed;
 
-    const welcomeMessage = formatText(selectedWelcomeTemplate, memberCount);
-    const byeMessage = formatText(selectedByeTemplate, memberCount);
+    const welcomeMessage = formatText(selectedWelcomeTemplate);
+    const byeMessage = formatText(selectedByeTemplate);
 
-    const mentions = [userJid, actionUserJid, ...participants.filter(p => p.admin).map(p => p.id)].filter(Boolean);
+    const mentions = [userJid, actionUserJid].filter(Boolean);
 
     /**
      * Función para generar imagen usando la API externa
