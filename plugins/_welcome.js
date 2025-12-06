@@ -1,3 +1,5 @@
+// welcome.js
+
 import { WAMessageStubType } from '@whiskeysockets/baileys';
 import fetch from 'node-fetch';
 
@@ -173,5 +175,5 @@ export async function before(m, { conn, participants, groupMetadata }) {
         }
     }
 
-    return true;
+    return true; // Importante: Devuelve true para no detener el flujo de otros comandos
 }
