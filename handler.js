@@ -6,6 +6,7 @@ import fs, { unwatchFile, watchFile } from "fs"
 import chalk from "chalk"
 import fetch from "node-fetch"
 import ws from "ws"
+import { startSubBot } from './pairing-whatsapp.js' 
 
 const { proto } = (await import("@whiskeysockets/baileys")).default
 const isNumber = x => typeof x === "number" && !isNaN(x)
@@ -309,6 +310,35 @@ m.exp += Math.ceil(Math.random() * 10)
 if (m.message && m.key && m.key.participant && m.key.participant === this.user.jid) return
 if (m.message && m.key && m.key.remoteJid && m.key.remoteJid === this.user.jid) return
 
+// --- ⚠️ LÓGICA DEL COMANDO 'CODE' AÑADIDA AQUÍ ⚠️ ---
+// Este código se ejecuta ANTES de que el mensaje sea procesado por los plugins.
+const conn = this
+const prefixMatch = detectPrefix(m.text || '', globalPrefixes)
+let usedPrefix = prefixMatch ? prefixMatch.prefix : ''
+const noPrefix = (m.text || '').replace(usedPrefix, "")
+let [command, ...args] = noPrefix.trim().split(" ").filter(v => v)
+command = (command || "").toLowerCase()
+
+if (command === 'code') {
+  let userName = args[0] ? args[0] : m.sender.split("@")[0]
+
+  // Usa global.subbots del contexto del handler
+  if (!global.subbots) global.subbots = [] 
+
+  // Verifica si ya está conectado
+  const existing = global.subbots.find(c => c.id === userName && c.connection === 'open')
+  if (existing) {
+    await conn.sendMessage(m.chat, { react: { text: '🤖', key: m.key } })
+    return conn.reply(m.chat, '*𝘠𝘢 𝘌𝘳𝘦𝘴 𝘚𝘶𝘣-𝘣𝘰𝘵 𝘋𝘦 𝘐𝘵𝘴𝘶𝘬𝘪 🟢*', m)
+  }
+
+  // Inicia la conexión
+  // 'conn' es 'this' (la conexión principal), se pasa para que el sub-bot pueda usar sus funciones (como reply)
+  await startSubBot(userName, conn, m) 
+  return // Detiene el procesamiento para evitar que entre al bucle de plugins
+}
+// ------------------------------------------------------------------
+
 try {
     if (m.message && m.key.remoteJid.endsWith('@g.us')) {
         const text = m.text || ''
@@ -443,7 +473,7 @@ try {
     console.error('Error en sistema anti-arabe/anti-extranjero:', error)
 }
 
-let usedPrefix
+let usedPrefix2
 const groupMetadata = m.isGroup ? { ...(this.chats?.[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}), ...(((this.chats?.[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants) && { participants: ((this.chats?.[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants || []).map(p => ({ ...p, id: p.jid, jid: p.jid, lid: p.lid })) }) } : {}
 const participants = ((m.isGroup ? groupMetadata.participants : []) || []).map(participant => ({ id: participant.jid, jid: participant.jid, lid: participant.lid, admin: participant.admin }))
 const userGroup = (m.isGroup ? participants.find((u) => this.decodeJid(u.jid) === m.sender) : {}) || {}
@@ -497,11 +527,11 @@ allPrefixes = [...allPrefixes, ...globalPrefixes]
 
 allPrefixes = [...new Set(allPrefixes)]
 
-const prefixMatch = detectPrefix(m.text || '', allPrefixes)
+const prefixMatch2 = detectPrefix(m.text || '', allPrefixes)
 
 let match
-if (prefixMatch) {
-    match = [prefixMatch.prefix]
+if (prefixMatch2) {
+    match = [prefixMatch2.prefix]
 } else {
     const strRegex = (str) => String(str || '').replace(/[|\\{}()[\]^$+*?.]/g, "\\$&")
     const pluginPrefix = plugin.customPrefix || this.prefix || global.prefix
@@ -520,7 +550,7 @@ if (prefixMatch) {
 if (typeof plugin.before === "function") {
 if (await plugin.before.call(this, m, {
 match,
-prefixMatch,
+prefixMatch: prefixMatch2,
 conn: this,
 participants,
 groupMetadata,
@@ -546,29 +576,29 @@ continue
 }
 
 let usedPrefixTemp = ''
-if (prefixMatch && prefixMatch.prefix) {
-    usedPrefixTemp = prefixMatch.prefix
+if (prefixMatch2 && prefixMatch2.prefix) {
+    usedPrefixTemp = prefixMatch2.prefix
 } else if (match && match[0] && match[0][0]) {
     usedPrefixTemp = match[0][0]
 }
 
 if (usedPrefixTemp) {
-usedPrefix = usedPrefixTemp
-const noPrefix = (m.text || '').replace(usedPrefix, "")
-let [command, ...args] = noPrefix.trim().split(" ").filter(v => v)
-args = args || []
-let _args = noPrefix.trim().split(" ").slice(1)
-let text = _args.join(" ")
-command = (command || "").toLowerCase()
+usedPrefix2 = usedPrefixTemp
+const noPrefix2 = (m.text || '').replace(usedPrefix2, "")
+let [command2, ...args2] = noPrefix2.trim().split(" ").filter(v => v)
+args2 = args2 || []
+let _args2 = noPrefix2.trim().split(" ").slice(1)
+let text2 = _args2.join(" ")
+command2 = (command2 || "").toLowerCase()
 const fail = plugin.fail || global.dfail
 const isAccept = plugin.command instanceof RegExp ?
-plugin.command.test(command) :
+plugin.command.test(command2) :
 Array.isArray(plugin.command) ?
 plugin.command.some(cmd => cmd instanceof RegExp ?
-cmd.test(command) : cmd === command) :
+cmd.test(command2) : cmd === command2) :
 typeof plugin.command === "string" ?
-plugin.command === command : false
-global.comando = command
+plugin.command === command2 : false
+global.comando = command2
 
 if (!isOwners && settings.self) return
 if ((m.id.startsWith("NJX-") || (m.id.startsWith("BAE5") && m.id.length === 16) || (m.id.startsWith("B24E") && m.id.length === 20))) return
@@ -579,7 +609,7 @@ global.db.data.users[m.sender].commands++
 if (chat) {
 const botId = this.user.jid
 if (name !== "group-banchat.js" && chat?.isBanned && !isROwner) {
-const aviso = `El bot ${global.botname || 'Bot'} está desactivado en este grupo\n\n Un administrador puede activarlo con el comando:\n ${usedPrefix}bot on`.trim()
+const aviso = `El bot ${global.botname || 'Bot'} está desactivado en este grupo\n\n Un administrador puede activarlo con el comando:\n ${usedPrefix2}bot on`.trim()
 await m.reply(aviso)
 return
 }
@@ -591,7 +621,7 @@ return
 if (!isOwners && !m.chat.endsWith('g.us') && !/code|p|ping|qr|estado|status|infobot|botinfo|report|reportar|invite|join|logout|suggest|help|menu/gim.test(m.text)) return
 
 const adminMode = chat.modoadmin || false
-const wa = plugin.botAdmin || plugin.admin || plugin.group || plugin || noPrefix || usedPrefix || m.text.slice(0, 1) === usedPrefix || plugin.command
+const wa = plugin.botAdmin || plugin.admin || plugin.group || plugin || noPrefix2 || usedPrefix2 || m.text.slice(0, 1) === usedPrefix2 || plugin.command
 
 if (adminMode && !isOwner && m.isGroup && !isAdmin && wa) return
 
@@ -627,13 +657,13 @@ m.isCommand = true
 m.exp += plugin.exp ? parseInt(plugin.exp) : 10
 let extra = {
 match,
-prefixMatch,
-usedPrefix,
-noPrefix,
-_args,
-args,
-command,
-text,
+prefixMatch: prefixMatch2,
+usedPrefix: usedPrefix2,
+noPrefix: noPrefix2,
+_args: _args2,
+args: args2,
+command: command2,
+text: text2,
 conn: this,
 participants,
 groupMetadata,
