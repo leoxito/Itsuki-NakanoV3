@@ -204,8 +204,7 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
               header,
               body: proto.Message.InteractiveMessage.Body.fromObject({
                 text: `> *❀ OPCIÓN-CODIGO ❀*
-
-𓂃 ࣪ ִֶָ☾.  
+  
 > 1. 📲 *WhatsApp → Ajustes*  
 > 2. ⛓️‍💥 *Dispositivos vinculados*  
 > 3. 🔐 *Toca vincular*  
