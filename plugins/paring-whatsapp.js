@@ -15,7 +15,7 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
   const ctxOk = global.rcanalr || {}
 
   let userName = args[0] ? args[0] : m.sender.split("@")[0]
-  const folder = path.join('./itsuki/Subbots', userName)
+  const folder = path.join('Sessions/SubBot', userName)
 
   if (global.subbots.length >= 10) {
     await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
