@@ -5,6 +5,9 @@ import { protoType, serialize, makeWASocket } from '../lib/simple.js'
 import path from 'path'
 import fs from 'fs'
 
+// Importar para el sistema de botón
+const { generateWAMessageFromContent, proto } = pkg
+
 if (!global.subbots) global.subbots = []
 
 let handler = async (m, { conn, args, usedPrefix, command }) => {
@@ -117,27 +120,54 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
       if (!state.creds?.registered && !pairingCodeSent) {
         pairingCodeSent = true
         
-        // Frase de preparación
-        await conn.reply(m.chat, 'Preparando código de vinculación...', m, ctxOk)
+        // Emoji de espera
+        await conn.sendMessage(m.chat, { react: { text: '🕑', key: m.key } })
         
         setTimeout(async () => {
           try {
             const code = await sock.requestPairingCode(userName)
             
-            // Enviar el código con frase de vinculación
-            await conn.reply(m.chat, 
-              `📱 *Para vincular tu WhatsApp:*\n\n1. Abre WhatsApp en tu teléfono\n2. Ve a Ajustes → Dispositivos vinculados\n3. Toca Vincular un dispositivo\n4. Ingresa este código de 8 dígitos:\n\n🔢 *${code}*\n\nEl código expira en unos minutos.`, 
-              m, ctxOk
-            )
+            // Emoji cuando se genera el código
+            await conn.sendMessage(m.chat, { react: { text: '✅️', key: m.key } })
             
-            // Enviar emoji de reacción
-            await conn.sendMessage(m.chat, { react: { text: '📱', key: m.key } })
+            // Sistema de botón para copiar el código
+            const msg = generateWAMessageFromContent(m.chat, {
+              viewOnceMessage: {
+                message: {
+                  interactiveMessage: proto.Message.InteractiveMessage.create({
+                    body: proto.Message.InteractiveMessage.Body.create({
+                      text: `> ⓘ *Código de Vinculación*\n\nPara vincular tu WhatsApp:\n\n1. Abre WhatsApp en tu teléfono\n2. Ve a Ajustes → Dispositivos vinculados\n3. Toca Vincular un dispositivo\n4. Usa este código de 8 dígitos:`
+                    }),
+                    footer: proto.Message.InteractiveMessage.Footer.create({ 
+                      text: "Pulsa el botón para copiar el código" 
+                    }),
+                    header: proto.Message.InteractiveMessage.Header.create({ 
+                      hasMediaAttachment: false 
+                    }),
+                    nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                      buttons: [
+                        {
+                          name: "cta_copy",
+                          buttonParamsJson: JSON.stringify({
+                            display_text: "📋 Copiar Código",
+                            copy_code: `${code}`
+                          })
+                        }
+                      ]
+                    })
+                  })
+                }
+              }
+            }, { quoted: m })
+
+            await conn.relayMessage(msg.key.remoteJid, msg.message, { messageId: msg.key.id })
             
-            // Enviar el código por separado
-            await conn.reply(m.chat, `Código para emparejar:\n\n${code}`, m, ctxOk)
+            // También enviar el código en texto normal
+            await conn.reply(m.chat, `Código: ${code}\n\nEl código expira en unos minutos.`, m, ctxOk)
             
           } catch (err) {
             console.error('Error al obtener pairing code:', err)
+            await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
             await conn.reply(m.chat, `Error: ${err.message}`, m, ctxErr)
           }
         }, 3000)
@@ -153,5 +183,5 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
   start()
 }
 
-handler.command = ['tss']
+handler.command = ['code']
 export default handler
