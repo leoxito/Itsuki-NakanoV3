@@ -168,14 +168,12 @@ let m = chatUpdate.messages[chatUpdate.messages.length - 1]
 if (!m) return
 if (global.db.data == null) await global.loadDatabase()
 
+// Anti respuesta del bot Fixieada por ZzawX
+if (m.key && m.key.fromMe) return
+
 try {
 m = smsg(this, m) || m
 if (!m) return
-
-if (m.key && m.key.fromMe) return
-if (m.message && m.key && m.key.participant && m.key.participant === this.user.jid) return
-if (m.message && m.key && m.key.remoteJid && m.key.remoteJid === this.user.jid) return
-
 m.exp = 0
 try {
 let user = global.db.data.users[m.sender]
@@ -310,6 +308,10 @@ await delay(time)
 
 if (m.isBaileys) return
 m.exp += Math.ceil(Math.random() * 10)
+
+// Anti respuesta del bot Fixieada por ZzawX
+if (m.message && m.key && m.key.participant && m.key.participant === this.user.jid) return
+if (m.message && m.key && m.key.remoteJid && m.key.remoteJid === this.user.jid) return
 
 try {
     if (m.message && m.key.remoteJid.endsWith('@g.us')) {
