@@ -1,6 +1,6 @@
 import ws from 'ws'
 import pkg from '@whiskeysockets/baileys'
-const { DisconnectReason } = pkg
+const { DisconnectReason, generateWAMessageFromContent, proto, prepareWAMessageMedia } = pkg
 import fs from "fs/promises"
 import path from 'path'
 
@@ -56,7 +56,7 @@ users.forEach((v, index) => {
     const jid = v.user.jid.replace(/[^0-9]/g, '')
     const name = v.user.name || 'itsuki-sub'
     const uptime = v.uptime ? dhms(Date.now() - v.uptime) : "0s"
-    
+
     botList += `🌷 *Itsuki-V3 Sub*  *[ ${index + 1} ]*\n\n`
     botList += `🌱 *Tag :* @${jid}\n`
     botList += `🆔️ *ID :* wa.me/${jid}?text=.menu\n`
@@ -81,7 +81,7 @@ if (totalUsers > limit) {
         const jid = v.user.jid.replace(/[^0-9]/g, '')
         const name = v.user.name || 'itsuki-sub'
         const uptime = v.uptime ? dhms(Date.now() - v.uptime) : "0s"
-        
+
         cap += `🌷 *Itsuki-V3 Sub*  *[ ${index + 1} ]*\n`
         cap += `🌱 Tag : @${jid}\n`
         cap += `🆔️ ID : wa.me/${jid}?text=.menu\n`
@@ -97,22 +97,58 @@ if (totalUsers > limit) {
 // Obtener menciones para los tags
 const mentions = users.map(v => v.user.jid)
 
-// Enviar mensaje
-await conn.sendMessage(m.chat, {
+// Crear botón del canal oficial
+const nativeButtons = [
+  {
+    name: 'cta_url',
+    buttonParamsJson: JSON.stringify({ 
+      display_text: '🌷 𝘾𝙖𝙣𝙖𝙡 𝙊𝙛𝙞𝙘𝙞𝙖𝙡', 
+      url: 'https://whatsapp.com/channel/0029VbBvZH5LNSa4ovSSbQ2N' 
+    })
+  }
+]
+
+try {
+  // Imagen del thumbnail
+  const imageUrl = ""
+  const media = await prepareWAMessageMedia({ image: { url: imageUrl } }, { upload: conn.waUploadToServer })
+  
+  const header = proto.Message.InteractiveMessage.Header.fromObject({
+    hasMediaAttachment: true,
+    imageMessage: media.imageMessage
+  })
+
+  // Crear mensaje interactivo con botón
+  const interactiveMessage = proto.Message.InteractiveMessage.fromObject({
+    body: proto.Message.InteractiveMessage.Body.fromObject({ text: cap }),
+    header,
+    nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.fromObject({
+      buttons: nativeButtons
+    })
+  })
+
+  const msg = generateWAMessageFromContent(m.chat, { interactiveMessage }, { userJid: conn.user.jid, quoted: m })
+  await conn.relayMessage(m.chat, msg.message, { messageId: msg.key.id })
+
+} catch (e) {
+  console.error('❌ Error al enviar mensaje interactivo:', e)
+  // Fallback: enviar mensaje normal si falla el interactivo
+  await conn.sendMessage(m.chat, {
     text: cap, 
     mentions: mentions,
     contextInfo: {
-        mentionedJid: mentions,
-        externalAdReply: {
-            title: "🤖 LISTA DE SUBBOTS ACTIVOS",
-            mediaType: 1,
-            previewType: 0,
-            renderLargerThumbnail: true,
-            thumbnail: await (await fetch("https://cdn.russellxz.click/69ae53cb.jpg")).buffer(),
-            sourceUrl: ''
-        }
+      mentionedJid: mentions,
+      externalAdReply: {
+        title: "🤖 LISTA DE SUBBOTS ACTIVOS",
+        mediaType: 1,
+        previewType: 0,
+        renderLargerThumbnail: true,
+        thumbnail: await (await fetch("https://cdn.russellxz.click/69ae53cb.jpg")).buffer(),
+        sourceUrl: ''
+      }
     }
-}, { quoted: m })
+  }, { quoted: m })
+}
 }
 
 handler.help = ['botlist']
