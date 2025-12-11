@@ -82,7 +82,7 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
 > *👀 Vistas:* ${vistas}
 > *🎬 Formato:* MP4
 > *🌐 Servidor:* ${video.api || 'Yupra'}
-> *🫧 Calidad:* Alta
+> *🫧 Calidad:* ${video.quality || 'Alta'}
 > *🔗 link:* ${url}`
         },
         { quoted: m }
@@ -114,7 +114,15 @@ async function getVid(url) {
     {
       api: 'Yupra',
       endpoint: `https://api.yupra.my.id/api/downloader/ytmp4?url=${encodeURIComponent(url)}`,
-      extractor: res => res?.result?.formats?.[0]?.url
+      extractor: (res) => {
+        if (res?.success && res?.data?.download_url) {
+          return {
+            url: res.data.download_url,
+            quality: res.data.format || 'Desconocida'
+          }
+        }
+        return null
+      }
     }
   ]
   return await fetchFromApis(apis)
@@ -125,10 +133,29 @@ async function fetchFromApis(apis) {
     try {
       const controller = new AbortController()
       const timeout = setTimeout(() => controller.abort(), 10000)
-      const res = await fetch(endpoint, { signal: controller.signal }).then(r => r.json())
+      const response = await fetch(endpoint, { 
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Accept': 'application/json'
+        }
+      })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+      
+      const res = await response.json()
       clearTimeout(timeout)
-      const link = extractor(res)
-      if (link) return { url: link, api }
+      
+      const result = extractor(res)
+      if (result) {
+        return {
+          url: result.url,
+          quality: result.quality,
+          api
+        }
+      }
     } catch (err) {
       console.log(`Error en API ${api}:`, err.message)
     }
