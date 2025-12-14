@@ -127,25 +127,6 @@ href="https://dash.skyultraplus.com"><img src="https://cdn.russellxz.click/39cd2
 </details>
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ### **`Autor del bot`**
 <a
-href="https://github.com/leoxito"><img src="https://github.com/leoxito.png" width="130" height="130" alt="leoxito"/></a>
+href="https://github.com/leoxito"><img src="https://github.com/leoxito.png" width="150" height="150" alt="leoxito"/></a>
