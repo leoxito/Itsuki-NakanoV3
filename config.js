@@ -13,26 +13,21 @@ global.__dirname = (url) => dirname(fileURLToPath(url));
 
 //aquí los retirados👑🥀
 global.retirado = [
-['5216641784469','BrayanOFC',true]
+['51906278352','RootBTFC',true]
 ];
 
 /*habrán comandos especiales para los retirados algo q los identifique | nota ustedes pondrán los coamndos y q solo funcione para los retirados*/
 
 // Configuraciones principales
-global.roowner = ['573187418668', '18094374392']
+global.roowner = ['51906278352', '51932884973']
 global.owner = [
-   ['573133374132', 'YO SOY YO', true],
-   ['50493732693', 'Ado 🐢', true],
-   ['5216671548329', 'Legna', true],
-   ['50496228919', '𝐒𝐨𝐩𝐨𝐫𝐭𝐞 𝐱 𝐒𝐭𝐚𝐟𝐟 𝐈𝐭𝐬𝐮𝐤𝐢 👨🏻‍💻👑', true],
-   ['595972314588', '۪〬.࠭⤿ 👑 ⋅ 𝘿𝙖𝙫𝙞𝙙   𝙭𝙯𝙨𝙮', true],
-   ['573187418668', '𝙇𝙚𝙤   𝙭𝙯𝙨𝙮  🦇🩸', true],
-   ['5216641784469', 'BrayanOFC', true],
-   ];
+   ['51906278352', 'Root Botnet', true],
+   ['5132884973', '𝐒𝐨𝐩𝐨𝐫𝐭𝐞 𝐱 𝐒𝐭𝐚𝐟𝐟 𝐈𝐭𝐬𝐮𝐤𝐢 👨🏻‍💻👑', true],
+     ];
 
-global.mods = ['573187418668', '595972314588', '51921826291']
-global.suittag = ['573187418668', '595972314588', '51921826291']
-global.prems = ['573187418668', '595972314588', '51921826291', '5216671548329']
+global.mods = ['51906278352', '51932884973']
+global.suittag = ['51906278352', '51932884973']
+global.prems = ['51906278352', '595972314588', '51921826291', '5216671548329']
 
 // Información del bot 
 global.libreria = 'Baileys'
