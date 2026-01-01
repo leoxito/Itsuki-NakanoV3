@@ -128,8 +128,8 @@ href="https://dash.skyultraplus.com"><img src="https://cdn.russellxz.click/39cd2
 
 ### `📌 𝗖𝗼𝗹𝗼𝗯𝗼𝗿𝗮𝗱𝗼𝗿𝗲𝘀 𝗗𝗲𝗹 𝗣𝗿𝗼𝘆𝗲𝗰𝘁𝗼 ^𝗡𝗲𝘄𝗨𝗽𝗱𝗮𝘁𝗲|𝗩4 🌸`
 
-<a href="https://github.com/leoxito/Itsuki-NakanoV5/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=leoxito/Itsuki-NakanoV5&_t=${Date.now()}" /> 
+<a href="https://github.com/leoxito/Itsuki-NakanoV3/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=leoxito/Itsuki-NakanoV3&_t=${Date.now()}" /> 
 </a>
 
 ### 🌺 𝐂𝐑𝐄𝐃𝐈𝐓𝐎𝐒 𝐏𝐑𝐈𝐍𝐂𝐈𝐏𝐀𝐋𝐄𝐒 ✨
