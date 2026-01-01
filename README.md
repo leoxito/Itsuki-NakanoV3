@@ -125,13 +125,6 @@ href="https://dash.skyultraplus.com"><img src="https://cdn.russellxz.click/39cd2
 </details>
 
 
-
-### `📌 𝗖𝗼𝗹𝗼𝗯𝗼𝗿𝗮𝗱𝗼𝗿𝗲𝘀 𝗗𝗲𝗹 𝗣𝗿𝗼𝘆𝗲𝗰𝘁𝗼 ^𝗡𝗲𝘄𝗨𝗽𝗱𝗮𝘁𝗲|𝗩4 🌸`
-
-<a href="https://github.com/leoxito/Itsuki-NakanoV4/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=leoxito/Itsuki-NakanoV4" /> 
-</a>
-
 ### 🌺 𝐂𝐑𝐄𝐃𝐈𝐓𝐎𝐒 𝐏𝐑𝐈𝐍𝐂𝐈𝐏𝐀𝐋𝐄𝐒 ✨
 [![Carlos](https://github.com/FzTeis.png?size=100)](https://github.com/FzTeis) [![GataDios](https://github.com/SoySapo6.png?size=100)](https://github.com/SpySapo6)
 
