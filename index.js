@@ -15,21 +15,22 @@ const path = require('path');
 const { spawn } = require('child_process');
 const chalk = require('chalk');
 const os = require('os');
-const cfonts = require('cfonts');
 const database = require('./lib/database');
 const speed = require('./lib/speed');
 
-/*const credits = `
-// ==============================================
-// 𝌙 Itsuki Nakano Wabot V4 𝌙
-// ==============================================
-// 💎 Creado por: FzTeis
-// 🌸 Adaptado para: Itsuki Nakano IA V4
-// 👨‍💻 Usado por: leoxitoDev.xyz
-// 📱 Base: Baileys (@whiskeysockets/baileys = "npm:wileys")
-// ⚡ Versión: ^NewUpdate | V4
-// ==============================================
-`;*/
+// Intentar cargar cfonts, si no existe, usar alternativa simple
+let cfonts;
+try {
+  cfonts = require('cfonts');
+} catch (error) {
+  console.log(chalk.yellow('[ADVERTENCIA]'), 'Módulo cfonts no encontrado. Usando alternativa...');
+  // Alternativa simple si cfonts no está instalado
+  cfonts = {
+    say: (text, options) => {
+      console.log(chalk.magenta.bold(`\n🌸 ${text} 🌸\n`));
+    }
+  };
+}
 
 function limpiarBasura() {
   const tempDir = './temp';
@@ -149,31 +150,31 @@ const cachedStart = speed.measurePerformance('bot-start', async () => {
   global.updateChat = database.updateChat;
 
   console.log(chalk.magentaBright('\nฅ^•ﻌ•^ฅ ɪᴛsᴜᴋɪ ɴᴀᴋᴀɴᴏ ^ɴᴇᴡ-ᴜᴘᴅᴀᴛᴇ | ᴠ4'));
-  
-  // Mostrar banner con cfonts
+
+  // Mostrar banner con cfonts (o alternativa)
   cfonts.say('Itsuki Nakano', {
     font: 'block',
     align: 'center',
     gradient: ['#ff69b4', '#ff1493']
   });
-  
+
   cfonts.say('Wabot V4', {
     font: 'console',
     align: 'center',
     gradient: ['#c71585', '#db7093']
   });
-  
+
   // Mostrar créditos
   console.log(chalk.bold.magenta('🌸 Made With | Itsuki Nakano IA Wabot V4'));
   console.log(chalk.bold.magenta('📱 Copyright (C) - ') + chalk.bold.cyan('Made by leoxitoDev.xyz'));
   console.log(chalk.bold.magenta('🎀 Versión: ') + chalk.bold.green('^NewUpdate | V4'));
   console.log('');
-  
+
   // Mostrar información del sistema
   const ramInGB = os.totalmem() / (1024 * 1024 * 1024);
   const freeRamInGB = os.freemem() / (1024 * 1024 * 1024);
   const currentTime = new Date().toLocaleString();
-  
+
   const info = `\n╭─────────────────────────────◉
 │ ${chalk.bgMagenta.white.bold('        🖥 INFORMACIÓN DEL SISTEMA        ')}
 │「 💻 」${chalk.yellow(`SO: ${os.type()}, ${os.release()} - ${os.arch()}`)}
@@ -194,7 +195,7 @@ const cachedStart = speed.measurePerformance('bot-start', async () => {
 │ ${chalk.bgMagenta.white.bold('        ⏰ HORA ACTUAL        ')}
 │「 🕒 」${chalk.magenta(`${currentTime}`)}
 ╰─────────────────────────────◉\n`;
-  
+
   console.log(info);
 
   console.log(chalk.blueBright('[🌸]'), chalk.green('✅ Iniciando main.js...\n'));
